@@ -1,5 +1,5 @@
-from web_english import app
+from web_english.main import bp
 
-@app.route("/")
+@bp.route("/")
 def index():
     return "Это стартовая страница"
