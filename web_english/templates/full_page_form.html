@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<form action="{{ form_action }}" method="POST">
+    {{ form.hidden_tag() }}
+    {% for field in form.fields %}
+    <p>
+        {{ field.label }} {% if field.name in form.required_fields%}*{% endif %}<br>
+        {{ field() }}
+    </p>
+    {% endfor %}
+    <p>{{ form.submit }}</p>
+</form>
+{% endblock %}

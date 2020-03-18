@@ -1,5 +1,7 @@
+from flask import render_template
 from web_english.main import bp
+
 
 @bp.route("/")
 def index():
-    return "Это стартовая страница"
+    return render_template("main/index.html")

@@ -1,4 +1,6 @@
 .vscode
 __pycache__
 tmp/*
+!tmp/.gitkeep
+migrations
 *.db

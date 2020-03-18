@@ -1,8 +1,11 @@
+import os
+
 class Config:
     DEBUG = False
     TESTING = False
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
     SQLALCHEMY_TRACK_MODIFICATIONS = True
+    SECRET_KEY = os.environ.get("WEB_ENGLISH_SECRET_KEY")
 
 
 class DevConfig(Config):
