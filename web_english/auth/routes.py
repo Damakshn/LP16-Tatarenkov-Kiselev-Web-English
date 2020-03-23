@@ -2,7 +2,7 @@ from flask import render_template, url_for, flash, redirect
 from flask_login import login_user, logout_user
 from web_english.auth import bp
 from web_english.auth.forms import LoginForm, RegisterForm
-from web_english.models import User, UserRoles
+from web_english.models import User
 from web_english import db
 
 
@@ -43,22 +43,23 @@ def register():
 @bp.route("/process-register", methods=["POST"])
 def process_register():
     form = RegisterForm()
-    if form.validate_on_submit():
-        new_user = User(
-            username=form.username.data,
-            password=form.password.data,
-            email=form.email.data,
-            first_name=form.first_name.data,
-            last_name=form.last_name.data,
-            role=UserRoles.STUDENT
-        )
-        db.session.add(new_user)
-        db.session.commit()
-        login_user(new_user)
-        flash("Вы вошли на сайт")
-        return redirect(url_for("main.index"))
-    flash("Что-то пошло не так")
-    return redirect(url_for("auth.login"))
+    if not form.validate_on_submit():
+        flash("Что-то пошло не так")
+        return redirect(url_for("auth.login"))
+    new_user = User(
+        username=form.username.data,
+        password=form.password.data,
+        email=form.email.data,
+        first_name=form.first_name.data,
+        last_name=form.last_name.data,
+        role=USER.USER_ROLE_STUDENT
+    )
+    db.session.add(new_user)
+    db.session.commit()
+    login_user(new_user)
+    flash("Вы вошли на сайт")
+    return redirect(url_for("main.index"))
+    
 
 @bp.route("/logout")
 def logout():

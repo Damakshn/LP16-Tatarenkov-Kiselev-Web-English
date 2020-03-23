@@ -1,15 +1,8 @@
 from datetime import datetime
-from enum import IntEnum
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from web_english import db, login_manager
 from sqlalchemy.ext.declarative import declared_attr
-
-
-class UserRoles(IntEnum):
-    ADMIN = 0
-    STUDENT = 1
-    CONTENTMAKER = 2
 
 
 class ServiceMixin:
@@ -27,6 +20,10 @@ class ServiceMixin:
 
 
 class User(UserMixin, db.Model, ServiceMixin):
+    USER_ROLE_ADMIN = 0
+    USER_ROLE_STUDENT = 1
+    USER_ROLE_CONTENTMAKER = 2
+
     __tablename__ = "Users"
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True, nullable=False)
@@ -36,7 +33,7 @@ class User(UserMixin, db.Model, ServiceMixin):
     first_name = db.Column(db.String(64))
     last_name = db.Column(db.String(64))
     is_active = db.Column(db.Boolean, nullable=False, default=True)
-    role = db.Column(db.Integer, nullable=False, default=UserRoles.STUDENT)
+    role = db.Column(db.Integer, nullable=False, default=USER_ROLE_STUDENT)
 
     def set_password(self, password):
         self.password = generate_password_hash(password)

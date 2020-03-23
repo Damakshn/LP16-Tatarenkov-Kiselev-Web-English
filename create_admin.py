@@ -2,13 +2,13 @@ from getpass import getpass
 import sys
 from config import DevConfig
 from web_english import create_app, db
-from web_english.models import User, UserRoles
+from web_english.models import User
 
 app = create_app(DevConfig)
 
 with app.app_context():
     username = input("Введите имя: ")
-    if User.query.filter(User.username == username).count():
+    if User.query.filter(User.username == username).exists():
         print("Пользователь с таким именем уже есть.")
         sys.exit(0)
     password = getpass("Введите пароль: ")
@@ -17,10 +17,10 @@ with app.app_context():
         print("Пароль повторён неверно.")
         sys.exit(0)
     email = input("Введите e-mail: ")
-    if User.query.filter(User.email == email).count():
+    if User.query.filter(User.email == email).exists():
         print("Этот e-mail уже используется.")
         sys.exit(0)
-    new_user = User(username=username, password=password, email=email, role=UserRoles.ADMIN)
+    new_user = User(username=username, password=password, email=email, role=USER.USER_ROLE_ADMIN)
     db.session.add(new_user)
     db.session.commit()
     print(f"Создан новый пользователь {new_user.username} id={new_user.id}")
