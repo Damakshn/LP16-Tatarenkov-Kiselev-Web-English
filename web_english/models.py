@@ -45,7 +45,7 @@ class User(UserMixin, db.Model, ServiceMixin):
         return f"<User {self.username}>"
 
 
- class Content(db.Model, ServiceMixin):
+class Content(db.Model, ServiceMixin):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String, unique=True, nullable=False)
     text_en = db.Column(db.Text, unique=True, nullable=False)
