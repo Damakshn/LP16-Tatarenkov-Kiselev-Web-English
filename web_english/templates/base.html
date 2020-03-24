@@ -15,6 +15,13 @@
         </div>
       {% endif %}
     {% endwith %}
+    {% block auth %}
+      {% if current_user.is_authenticated %}
+      <p>Вы вошли как {{ current_user.username }} <a href="/auth/logout">Выйти</a></p>
+      {% else %}
+      <a href="/auth/login">Войти</a>
+      {% endif %}
+    {% endblock %}
     <div id="content">
         {% block content %}
         Это базовый шаблон
