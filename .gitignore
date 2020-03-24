@@ -4,3 +4,5 @@ tmp/*
 !tmp/.gitkeep
 migrations
 *.db
+env/
+.DS_Store
