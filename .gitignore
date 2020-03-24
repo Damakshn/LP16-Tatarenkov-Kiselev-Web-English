@@ -5,3 +5,4 @@ tmp/*
 migrations
 *.db
 env/
+.DS_Store
