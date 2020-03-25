@@ -14,7 +14,8 @@ def login():
         "auth/login.html",
         page_title=title,
         form=form,
-        form_action=url_for("auth.process_login")
+        form_action=url_for("auth.process_login"),
+        is_auth_page=True
     )
 
 @bp.route("/process-login", methods=["POST"])
@@ -37,7 +38,8 @@ def register():
         "auth/register.html",
         page_title=title,
         form=form,
-        form_action=url_for("auth.process_register")
+        form_action=url_for("auth.process_register"),
+        is_auth_page=True
     )
 
 @bp.route("/process-register", methods=["POST"])
