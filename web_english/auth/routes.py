@@ -1,69 +1,9 @@
-from flask import render_template, url_for, flash, redirect
-from flask_login import login_user, logout_user
 from web_english.auth import bp
-from web_english.auth.forms import LoginForm, RegisterForm
-from web_english.models import User
-from web_english import db
+from web_english.auth import views
 
 
-@bp.route("/login")
-def login():
-    title = "Авторизация"
-    form = LoginForm()
-    return render_template(
-        "auth/login.html",
-        page_title=title,
-        form=form,
-        form_action=url_for("auth.process_login"),
-        is_auth_page=True
-    )
-
-@bp.route("/process-login", methods=["POST"])
-def process_login():
-    form = LoginForm()
-    if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
-        if user and user.check_password(form.password.data):
-            login_user(user)
-            flash("Вы вошли на сайт")
-            return redirect(url_for("main.index"))
-    flash("Что-то пошло не так")
-    return redirect(url_for("auth.login"))
-
-@bp.route("/register")
-def register():
-    title = "Регистрация"
-    form = RegisterForm()
-    return render_template(
-        "auth/register.html",
-        page_title=title,
-        form=form,
-        form_action=url_for("auth.process_register"),
-        is_auth_page=True
-    )
-
-@bp.route("/process-register", methods=["POST"])
-def process_register():
-    form = RegisterForm()
-    if not form.validate_on_submit():
-        error = list(form.errors.values())
-        flash(error[0][0])
-        return redirect(url_for("auth.register"))
-    new_user = User(
-        username=form.username.data,
-        password=form.password.data,
-        email=form.email.data,
-        first_name=form.first_name.data,
-        last_name=form.last_name.data,
-    )
-    db.session.add(new_user)
-    db.session.commit()
-    login_user(new_user)
-    flash("Вы вошли на сайт")
-    return redirect(url_for("main.index"))
-    
-
-@bp.route("/logout")
-def logout():
-    logout_user()
-    return redirect(url_for("main.index"))
+bp.add_url_rule("/login", "login", views.login)
+bp.add_url_rule("/process-login", "process_login", views.process_login, methods=["POST"])
+bp.add_url_rule("/register", "register", views.register)
+bp.add_url_rule("/process-register", "process_register", views.process_register)
+bp.add_url_rule("/logout", "logout", views.logout)
