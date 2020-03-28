@@ -13,7 +13,8 @@ def create():
         'text/create_text.html',
         title='Создание текста',
         form=form,
-        form_action=url_for('text.process_create')
+        form_action=url_for('text.process_create'),
+        enctype="multipart/form-data"
     )
 
 @bp.route('/process_create', methods=['GET', 'POST'])
