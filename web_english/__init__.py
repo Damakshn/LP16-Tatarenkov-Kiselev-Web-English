@@ -25,6 +25,5 @@ def create_app(config):
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(text_bp, url_prefix="/text")
-    
 
     return app
