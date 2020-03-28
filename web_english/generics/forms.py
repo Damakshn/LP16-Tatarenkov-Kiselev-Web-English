@@ -19,6 +19,3 @@ class GenericForm(FlaskForm):
                 if isinstance(validator, DataRequired):
                     result.append(field)
         return result
-
-class BootstrapForm(GenericForm):
-    pass
