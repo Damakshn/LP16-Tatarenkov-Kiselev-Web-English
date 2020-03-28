@@ -6,3 +6,4 @@ migrations
 *.db
 env/
 .DS_Store
+*.mp3

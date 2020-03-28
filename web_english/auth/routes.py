@@ -46,15 +46,15 @@ def register():
 def process_register():
     form = RegisterForm()
     if not form.validate_on_submit():
-        flash("Что-то пошло не так")
-        return redirect(url_for("auth.login"))
+        error = list(form.errors.values())
+        flash(error[0][0])
+        return redirect(url_for("auth.register"))
     new_user = User(
         username=form.username.data,
         password=form.password.data,
         email=form.email.data,
         first_name=form.first_name.data,
         last_name=form.last_name.data,
-        role=USER.USER_ROLE_STUDENT
     )
     db.session.add(new_user)
     db.session.commit()

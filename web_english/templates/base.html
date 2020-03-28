@@ -24,9 +24,10 @@
         {% if current_user.is_authenticated %}
             <span>Вы вошли как {{ current_user.username }}</span>
             <a class="nav-link" href="/auth/logout">Выйти</a>
-          {% elif not is_auth_page %}
+        {% elif not is_auth_page %}
             <a class="nav-link" href="/auth/login">Войти</a>
-          {% endif %}
+            <a class="nav-link" href="/auth/register">Регистрация</a>
+        {% endif %}
       </div>
     </nav>
     {% with messages = get_flashed_messages() %}
@@ -38,9 +39,6 @@
         </div>
       {% endif %}
     {% endwith %}
-    {% block auth %}
-      
-    {% endblock %}
     <div id="content" class="container">
         {% block content %}
         Это базовый шаблон

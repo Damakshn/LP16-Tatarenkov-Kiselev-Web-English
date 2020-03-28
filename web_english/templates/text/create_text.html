@@ -1,5 +1,26 @@
 {% extends "base.html" %}
 
 {% block content %}
-    {% include "bootstrap_form.html" %}
+    <form action="{{ form_action }}" method="post" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        <p>
+            {{ form.title_text.label }}<br>
+            {{ form.title_text() }}
+        </p>
+        <p>
+            {{ form.text_en.label }}<br>
+            {{ form.text_en() }}
+        </p>
+        <p>
+            {{ form.text_ru.label }}<br>
+            {{ form.text_ru() }}
+        </p>
+        <p>
+            {{ form.audio.label}}
+            {{ form.audio }}
+        </p>
+        <p>
+            {{ form.submit()  }}
+        </p>
+    </form>
 {% endblock %}

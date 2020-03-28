@@ -9,6 +9,7 @@ class Config:
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.environ.get("WEB_ENGLISH_SECRET_KEY")
+    UPLOADED_AUDIOS_DEST = BASE_DIR + '/web_english/uploads/audio'
 
 
 class DevConfig(Config):
