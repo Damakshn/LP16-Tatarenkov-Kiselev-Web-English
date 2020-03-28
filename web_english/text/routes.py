@@ -3,6 +3,7 @@ from web_english.text import bp
 from web_english import db
 from web_english.text.forms import TextForm
 from web_english.models import Content
+from web_english import audios
 
 
 @bp.route('/create')
@@ -15,17 +16,19 @@ def create():
         form_action=url_for('text.process_create')
     )
 
-@bp.route('/process_create', methods=['POST'])
+@bp.route('/process_create', methods=['GET', 'POST'])
 def process_create():
     form = TextForm()
 
     if form.validate_on_submit():
         text = Content(
             title=form.title_text.data,
-            text_eu=form.text_eu.data,
+            text_en=form.text_en.data,
             text_ru=form.text_ru.data
         )
         db.session.add(text)
         db.session.commit()
+        audios.save(form.audio.data)
         return redirect(url_for('text.create'))
     return redirect(url_for('text.create'))
+
