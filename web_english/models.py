@@ -1,8 +1,11 @@
+import jwt
 from datetime import datetime
 from flask_login import UserMixin
+from time import time
 from werkzeug.security import generate_password_hash, check_password_hash
 from web_english import db, login_manager
 from sqlalchemy.ext.declarative import declared_attr
+from flask import current_app
 
 
 class ServiceMixin:
@@ -30,6 +33,7 @@ class User(UserMixin, db.Model, ServiceMixin):
     # хэш генерируется на before_insert
     password = db.Column(db.String(128), nullable=False)
     email = db.Column(db.String(64), unique=True, nullable=False)
+    conf_email = db.Column(db.Boolean, default=False)
     first_name = db.Column(db.String(64))
     last_name = db.Column(db.String(64))
     is_active = db.Column(db.Boolean, nullable=False, default=True)
@@ -37,12 +41,26 @@ class User(UserMixin, db.Model, ServiceMixin):
 
     def set_password(self, password):
         self.password = generate_password_hash(password)
-    
+
     def check_password(self, password):
         return check_password_hash(self.password, password)
 
     def __str__(self):
         return f"<User {self.username}>"
+
+    def get_token(self, expires_in=600):
+        return jwt.encode(
+            {'reset_password': self.id, 'exp': time() + expires_in},
+            current_app.config['SECRET_KEY'], algorithm='HS256').decode('utf-8')
+
+    @staticmethod
+    def verify_token(token):
+        try:
+            id = jwt.decode(token, current_app.config['SECRET_KEY'],
+                            algorithms=['HS256'])['reset_password']
+        except:
+            return
+        return User.query.get(id)
 
 
 class Content(db.Model, ServiceMixin):
@@ -60,7 +78,9 @@ class Content(db.Model, ServiceMixin):
 def fetch_user(user_id):
     return User.query.get(user_id)
 
+
 def generate_password_for_new_user(mapper, connection, target):
     target.password = generate_password_hash(target.password)
+
 
 db.event.listen(User, 'before_insert', generate_password_for_new_user)
