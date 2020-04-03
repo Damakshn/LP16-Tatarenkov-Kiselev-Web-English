@@ -19,7 +19,8 @@ https://pypi.org/project/pocketsphinx/
 http://www.swig.org/
 """
 
-SECOND = 1000
+
+SECOND = 1000 # миллисекунды
 FILE_NAME = "audio_full.mp3"
 
 recognizer = sr.Recognizer()
@@ -65,7 +66,7 @@ def get_audiomap(audiosegment_in_wav):
     # получил свой отдельный файл
     total_chunks = math.ceil(len(audiosegment_in_wav) / SECOND)
     rest_of_audio = audiosegment_in_wav
-    for i in range(total_chunks):
+    for _ in range(total_chunks):
         # если оставшаяся длина файла меньше секунды, берём всё
         # иначе отрезаем 1 секунду
         mark = min(SECOND, len(rest_of_audio))
