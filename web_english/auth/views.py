@@ -22,7 +22,7 @@ def process_login():
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         if user and user.check_password(form.password.data):
-            if user.conf_email is True:
+            if user.is_email_confirmed:
                 login_user(user)
                 flash("Вы вошли на сайт")
                 return redirect(url_for("main.index"))
@@ -71,7 +71,7 @@ def ver_email(token):
     if not user:
         flash("Подтвердить email не удалось")
         return redirect(url_for("main.index"))
-    user.conf_email = True
+    user.is_email_confirmed = True
     db.session.commit()
     login_user(user)
     return render_template("auth/ver_email.html")

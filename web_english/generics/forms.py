@@ -1,13 +1,14 @@
 from flask_wtf import FlaskForm
 from wtforms.validators import DataRequired
 
+
 class GenericForm(FlaskForm):
     service_fields = ("submit", "csrf_token")
 
     @property
     def fields(self):
         return [getattr(self, field) for field in self.data.keys() if field not in self.service_fields]
-    
+
     @property
     def required_fields(self):
         result = []

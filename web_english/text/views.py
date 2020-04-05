@@ -4,6 +4,7 @@ from web_english.text.forms import TextForm
 from web_english.models import Content
 from web_english import audios
 
+
 def create():
     form = TextForm()
     return render_template(
@@ -13,6 +14,7 @@ def create():
         form_action=url_for('text.process_create'),
         enctype="multipart/form-data"
     )
+
 
 def process_create():
     form = TextForm()
