@@ -1,10 +1,11 @@
+from celery import Celery
 from flask import Flask
 from flask_login import LoginManager
+from flask_mail import Mail
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_uploads import configure_uploads, UploadSet, AUDIO
-from flask_mail import Mail
-from celery import Celery
+
 from config import Config
 
 db = SQLAlchemy()

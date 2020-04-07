@@ -26,9 +26,8 @@ def process_login():
                 login_user(user)
                 flash("Вы вошли на сайт")
                 return redirect(url_for("main.index"))
-            else:
-                flash("Вы не подтвердили почту")
-                return redirect(url_for("main.index"))
+            flash("Вы не подтвердили почту")
+            return redirect(url_for("main.index"))
     flash("Что-то пошло не так")
     return redirect(url_for("auth.login"))
 

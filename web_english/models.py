@@ -1,10 +1,11 @@
-import jwt
 from datetime import datetime
 from flask import current_app
 from flask_login import UserMixin
-from time import time
 from sqlalchemy.ext.declarative import declared_attr
+from time import time
 from werkzeug.security import generate_password_hash, check_password_hash
+import jwt
+
 from web_english import db, login_manager
 
 
