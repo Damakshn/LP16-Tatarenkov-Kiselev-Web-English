@@ -1,20 +1,23 @@
-from flask_wtf import FlaskForm
-from web_english.generics.forms import GenericForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, ValidationError, EqualTo, Email
 from web_english.models import User
+from web_english.generics.forms import GenericForm
+
 
 class LoginForm(GenericForm):
     username = StringField("Имя пользователя", validators=[DataRequired()])
     password = PasswordField("Пароль", validators=[DataRequired()])
     submit = SubmitField("Вход", validators=[DataRequired()])
 
+
 class RegisterForm(GenericForm):
     username = StringField("Имя пользователя", validators=[DataRequired()])
     first_name = StringField("Имя")
     last_name = StringField("Фамилия")
-    email = StringField("e-mail", validators=[DataRequired(), Email("Неправильно введен Email")])
-    password = PasswordField("Пароль", validators=[DataRequired(), EqualTo("confirm", "Пароли должны быть одинаковы")])
+    email = StringField("e-mail", validators=[DataRequired(),
+                        Email("Неправильно введен Email")])
+    password = PasswordField("Пароль", validators=[DataRequired(),
+                             EqualTo("confirm", "Пароли должны быть одинаковы")])
     confirm = PasswordField("Повторите пароль", validators=[DataRequired()])
     submit = SubmitField("Отправить", validators=[DataRequired()])
 
@@ -28,12 +31,15 @@ class RegisterForm(GenericForm):
         if user is not None:
             raise ValidationError("Такой Email уже используется.")
 
+
 class ResetPasswordRequestForm(GenericForm):
-    email = StringField("Email", validators=[DataRequired(), Email("Неправильно введен Email")])
+    email = StringField("Email", validators=[DataRequired(),
+                        Email("Неправильно введен Email")])
     submit = SubmitField("Сбросить пароль")
+
 
 class ResetPasswordForm(GenericForm):
     password = PasswordField("Пароль", validators=[DataRequired()])
-    confirm = PasswordField(
-        "Повторите пароль", validators=[DataRequired(), EqualTo("password", "Пароли должны быть одинаковы")])
+    confirm = PasswordField("Повторите пароль", validators=[DataRequired(),
+                            EqualTo("password", "Пароли должны быть одинаковы")])
     submit = SubmitField("Сбросить пароль")

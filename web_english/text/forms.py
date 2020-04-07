@@ -1,7 +1,7 @@
-from flask_wtf import FlaskForm
 from wtforms import TextAreaField, SubmitField, FileField
 from wtforms.validators import DataRequired
 from web_english.generics.forms import GenericForm
+
 
 class TextForm(GenericForm):
     title_text = TextAreaField('Title', validators=[DataRequired()])

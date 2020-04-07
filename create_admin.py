@@ -23,8 +23,10 @@ with app.app_context():
     if User.query.filter(User.email == email).count():
         print("Этот e-mail уже используется.")
         sys.exit(0)
-        
-    new_user = User(username=username, password=password, email=email, role=User.USER_ROLE_ADMIN)
+
+    new_user = User(username=username, password=password,
+                    email=email, role=User.USER_ROLE_ADMIN
+                    )
     db.session.add(new_user)
     db.session.commit()
     print(f"Создан новый пользователь {new_user.username} id={new_user.id}")
