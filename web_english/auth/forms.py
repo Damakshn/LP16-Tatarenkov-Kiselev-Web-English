@@ -21,9 +21,19 @@ class RegisterForm(GenericForm):
     def validate_username(self, username):
         user = User.query.filter_by(username=username.data).first()
         if user is not None:
-            raise ValidationError('Такой пользователь уже существует.')
+            raise ValidationError("Такой пользователь уже существует.")
 
     def validate_email(self, email):
         user = User.query.filter_by(email=email.data).first()
         if user is not None:
-            raise ValidationError('Такой Email уже используется.')
+            raise ValidationError("Такой Email уже используется.")
+
+class ResetPasswordRequestForm(GenericForm):
+    email = StringField("Email", validators=[DataRequired(), Email("Неправильно введен Email")])
+    submit = SubmitField("Сбросить пароль")
+
+class ResetPasswordForm(GenericForm):
+    password = PasswordField("Пароль", validators=[DataRequired()])
+    confirm = PasswordField(
+        "Повторите пароль", validators=[DataRequired(), EqualTo("password", "Пароли должны быть одинаковы")])
+    submit = SubmitField("Сбросить пароль")
