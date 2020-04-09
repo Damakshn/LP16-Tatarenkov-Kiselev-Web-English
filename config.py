@@ -27,6 +27,13 @@ class Config:
     CELERY_BROKER_URL = 'redis://localhost:6379/0'
     CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 
+    # Yandex SpeechKit configuration
+    FOLDER_ID = os.environ.get("FOLDER_ID_YANDEX")
+    API_KEY = os.environ.get("API_KEY_YANDEX")
+
+
+
+
 
 class DevConfig(Config):
     DEBUG = True
