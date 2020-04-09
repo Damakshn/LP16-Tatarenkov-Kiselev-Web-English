@@ -32,9 +32,6 @@ class Config:
     API_KEY = os.environ.get("API_KEY_YANDEX")
 
 
-
-
-
 class DevConfig(Config):
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(BASE_DIR, "dev.db")
