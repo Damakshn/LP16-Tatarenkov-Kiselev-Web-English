@@ -23,11 +23,10 @@ def create():
 
 def process_create():
     form = TextForm()
-
     if form.validate_on_submit():
         filename = re.sub(r'\s', r'_', form.title_text.data.lower())
         filename = re.sub(r'\W', r'', filename)
-        filename = f'{filename[:15]}.mp3'  # 15 первых символов, чтобы не было больших имен
+        filename = f'{filename}.mp3'
         audios.save(form.audio.data, name=filename)
         duration = duration_audio(f'{Config.UPLOADED_AUDIOS_DEST}/{filename}')
         text = Content(
