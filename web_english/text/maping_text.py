@@ -11,10 +11,13 @@ def chunk_audiofile(audiofile, title):
     audio = AudioSegment.from_mp3(audiofile)
     length_audio = len(audio)
     counter = 1
+
+    # 3000 - это интервал в 3 секунды распознования текста. К этому числу мы будем
+    # привязывать слова в оригинальном тексте.
     interval = 3000
     start = 0
     end = 0
-    list_chunks = []
+    chunks = []
     for i in range(0, length_audio, interval):
         if i == 0:
             start = 0
@@ -26,39 +29,41 @@ def chunk_audiofile(audiofile, title):
             end = length_audio
         chunk = audio[start:end]
         filename = f'chunks/{title}chunk{str(counter)}.ogg'
-        list_chunks.append(filename)
+        chunks.append(filename)
         chunk.export(filename, format='ogg')
-        print(f"Processing {title}chunk{str(counter)}. Start = {str(start)} End = {str(end)}")
-        counter = counter + 1
-    return list_chunks
+        print(f"Processing {title}chunk{counter}. Start = {start} End = {end}")
+        counter += 1
+    return chunks
 
 
-def send_ya_speech_kit(*args):
-    list_chunks_result = []
-    for chunk in args:
+def send_ya_speech_kit(chunks):
+    chunks_result = []
+    for chunk in chunks:
+        # Эта часть кода взята с яндекса и изменена под наш проект. Названия переменных
+        # взяты оригинальные (изменены значения).
         with open(chunk, "rb") as f:
             data = f.read()
 
-            params = "&".join([
-                "topic=general",
-                "folderId=%s" % Config.FOLDER_ID,
-                "lang=en-US"
-            ])
+        params = "&".join([
+            "topic=general",
+            "folderId=%s" % Config.FOLDER_ID,
+            "lang=en-US"
+        ])
 
-            url = urllib.request.Request("https://stt.api.cloud.yandex.net/speech/v1/stt:recognize?%s" % params,
-                                         data=data)
-            url.add_header("Authorization", "Api-Key %s" % Config.API_KEY)
+        url = urllib.request.Request("https://stt.api.cloud.yandex.net/speech/v1/stt:recognize?%s" % params,
+                                     data=data)
+        url.add_header("Authorization", "Api-Key %s" % Config.API_KEY)
 
-            responseData = urllib.request.urlopen(url).read().decode('UTF-8')
-            decodedData = json.loads(responseData)
+        responseData = urllib.request.urlopen(url).read().decode('UTF-8')
+        decodedData = json.loads(responseData)
 
-            if decodedData.get("error_code") is None:
-                list_chunks_result.append(decodedData.get("result"))
-    return list_chunks_result
+        if decodedData.get("error_code") is None:
+            chunks_result.append(decodedData.get("result"))
+    return chunks_result
 
 
 # На вход принемаем оригинальный текст и список распознанных отрывков
-def maping_text(text, *args):
+def maping_text(text, chunks_result):
     # Убираем из текста все знаки препинания и разбиваем по словам
     split_text = re.sub("[.,!?;:]", "", text).lower().split()
 
@@ -69,12 +74,15 @@ def maping_text(text, *args):
     last_word = [0, None, second]
     list_last_word = [last_word]
 
-    for recognized in args:
+    for recognized in chunks_result:
         # Каждый отрывок - это 3 секунды чтения диктора
         second += 3
 
         # Отрезок оригинального текста, который будет сравниваться с
         # определенным распознанным отрывком
+        # 15  - это примерное кол-во слов, которое диктор может произнести за 3 скунды
+        # Можно поставить хоть 500, но тогда будет дольше считать. Но если меньше 15, то
+        # split_recognized может оказать больше, а это неправильно
         cut_split_text = split_text[last_word[0]:last_word[0] + 15]
 
         # Разбиваем распознанный отрывок на слова и приводим к нижнему регистру
@@ -117,8 +125,7 @@ def duplicate_word(cut_split_text, medium_word, number_duplicate):
             duplicate = cut_split_text.index(medium_word, start_at + 1)
         except ValueError:
             break
-        else:
-            duplicates.append(duplicate)
-            start_at = duplicate
+        duplicates.append(duplicate)
+        start_at = duplicate
     result = duplicates[number_duplicate]
     return result
