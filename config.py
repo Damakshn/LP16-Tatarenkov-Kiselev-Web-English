@@ -13,7 +13,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Upload Audio configuration
-    UPLOADED_AUDIOS_DEST = f'{BASE_DIR}/web_english/uploads/audio'
+    UPLOADED_AUDIOS_DEST = f'{BASE_DIR}/web_english/text/uploads/audio'
 
     # Send Email configuration
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER')

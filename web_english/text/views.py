@@ -4,6 +4,7 @@ from flask import render_template, url_for, redirect
 from pydub import AudioSegment
 
 from config import Config
+from web_english.text.maping_text import Recognizer
 from web_english import db
 from web_english.text.forms import TextForm
 from web_english.models import Content
@@ -24,11 +25,13 @@ def create():
 def process_create():
     form = TextForm()
     if form.validate_on_submit():
-        filename = re.sub(r'\s', r'_', form.title_text.data.lower())
-        filename = re.sub(r'\W', r'', filename)
-        filename = f'{filename}.mp3'
+        filename_draft = re.sub(r'\s', r'_', form.title_text.data.lower())
+        filename_without_mp3 = re.sub(r'\W', r'', filename_draft)
+        filename = f'{filename_without_mp3}.mp3'
         audios.save(form.audio.data, name=filename)
         duration = duration_audio(f'{Config.UPLOADED_AUDIOS_DEST}/{filename}')
+        recog = Recognizer(f'{Config.UPLOADED_AUDIOS_DEST}/{filename}', filename_without_mp3)
+        recog.run()
         text = Content(
             title=form.title_text.data,
             text_en=form.text_en.data,

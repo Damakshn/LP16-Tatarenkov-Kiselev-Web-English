@@ -72,9 +72,19 @@ class Content(db.Model, ServiceMixin):
     text_en = db.Column(db.Text, unique=True, nullable=False)
     text_ru = db.Column(db.Text, unique=True, nullable=False)
     duration = db.Column(db.Integer)
+    chunks = db.relationship('Chunk', backref='content', lazy='dynamic')
 
     def __repr__(self):
         return f"<Content {self.title}>"
+
+
+class Chunk(db.Model, ServiceMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    chunks_recognized = db.Column(db.Text)
+    id_content = db.Column(db.Integer, db.ForeignKey("content.id"))
+
+    def __str__(self):
+        return f"<Chunks {self.chunks_recognized}>"
 
 
 @login_manager.user_loader

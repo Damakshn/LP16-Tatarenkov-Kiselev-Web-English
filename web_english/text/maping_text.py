@@ -7,59 +7,66 @@ from pydub import AudioSegment
 from config import Config
 
 
-def chunk_audiofile(audiofile, title):
-    audio = AudioSegment.from_mp3(audiofile)
-    length_audio = len(audio)
-    counter = 1
+class Recognizer:
 
-    # 3000 - это интервал в 3 секунды распознования текста. К этому числу мы будем
-    # привязывать слова в оригинальном тексте.
-    interval = 3000
-    start = 0
-    end = 0
-    chunks = []
-    for i in range(0, length_audio, interval):
-        if i == 0:
-            start = 0
-            end = interval
-        else:
-            start = end
-            end = start + interval
-        if end >= length_audio:
-            end = length_audio
-        chunk = audio[start:end]
-        filename = f'chunks/{title}chunk{str(counter)}.ogg'
-        chunks.append(filename)
-        chunk.export(filename, format='ogg')
-        print(f"Processing {title}chunk{counter}. Start = {start} End = {end}")
-        counter += 1
-    return chunks
+    def __init__(self, audiofile, title):
+        self.audio = AudioSegment.from_mp3(audiofile)
+        self.title = title
 
+    def chunk_audiofile(self):
+        length_audio = len(self.audio)
+        counter = 1
 
-def send_ya_speech_kit(chunks):
-    chunks_result = []
-    for chunk in chunks:
-        # Эта часть кода взята с яндекса и изменена под наш проект. Названия переменных
-        # взяты оригинальные (изменены значения).
-        with open(chunk, "rb") as f:
-            data = f.read()
+        # 3000 - это интервал в 3 секунды распознования текста. К этому числу мы будем
+        # привязывать слова в оригинальном тексте.
+        interval = 3000
+        start = 0
+        end = 0
+        chunks = []
+        for i in range(0, length_audio, interval):
+            if i == 0:
+                start = 0
+                end = interval
+            else:
+                start = end
+                end = start + interval
+            if end >= length_audio:
+                end = length_audio
+            chunk = self.audio[start:end]
+            filename = f'web_english/text/uploads/audio/chunks/{self.title}chunk{str(counter)}.ogg'
+            chunks.append(filename)
+            chunk.export(filename, format='ogg')
+            print(f"Processing {self.title}chunk{counter}. Start = {start} End = {end}")
+            counter += 1
+        return chunks
 
-        params = "&".join([
-            "topic=general",
-            "folderId=%s" % Config.FOLDER_ID,
-            "lang=en-US"
-        ])
+    def send_ya_speech_kit(self, chunks):
+        chunks_result = []
+        for chunk in chunks:
+            # Эта часть кода взята с яндекса и изменена под наш проект. Названия переменных
+            # взяты оригинальные (изменены значения).
+            with open(chunk, "rb") as f:
+                data = f.read()
 
-        url = urllib.request.Request("https://stt.api.cloud.yandex.net/speech/v1/stt:recognize?%s" % params,
-                                     data=data)
-        url.add_header("Authorization", "Api-Key %s" % Config.API_KEY)
+            params = "&".join([
+                "topic=general",
+                "folderId=%s" % Config.FOLDER_ID,
+                "lang=en-US"
+            ])
 
-        responseData = urllib.request.urlopen(url).read().decode('UTF-8')
-        decodedData = json.loads(responseData)
+            url = urllib.request.Request("https://stt.api.cloud.yandex.net/speech/v1/stt:recognize?%s" % params,
+                                         data=data)
+            url.add_header("Authorization", "Api-Key %s" % Config.API_KEY)
 
-        if decodedData.get("error_code") is None:
-            chunks_result.append(decodedData.get("result"))
-    return chunks_result
+            responseData = urllib.request.urlopen(url).read().decode('UTF-8')
+            decodedData = json.loads(responseData)
+
+            if decodedData.get("error_code") is None:
+                chunks_result.append(decodedData.get("result"))
+        return chunks_result
+
+    def run(self):
+        self.send_ya_speech_kit(self.chunk_audiofile())
 
 
 # На вход принемаем оригинальный текст и список распознанных отрывков
