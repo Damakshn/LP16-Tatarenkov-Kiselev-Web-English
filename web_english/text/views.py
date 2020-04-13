@@ -1,10 +1,7 @@
-import re
-
 from flask import render_template, url_for, redirect
 from pydub import AudioSegment
 
-from config import Config
-from web_english.text.maping_text import Recognizer
+from web_english.text.maping_text import run_run, create_filename
 from web_english import db
 from web_english.text.forms import TextForm
 from web_english.models import Content
@@ -25,13 +22,9 @@ def create():
 def process_create():
     form = TextForm()
     if form.validate_on_submit():
-        filename_draft = re.sub(r'\s', r'_', form.title_text.data.lower())
-        filename_without_mp3 = re.sub(r'\W', r'', filename_draft)
-        filename = f'{filename_without_mp3}.mp3'
+        filename = create_filename(form.title_text.data)
         audios.save(form.audio.data, name=filename)
-        duration = duration_audio(f'{Config.UPLOADED_AUDIOS_DEST}/{filename}')
-        recog = Recognizer(f'{Config.UPLOADED_AUDIOS_DEST}/{filename}', filename_without_mp3)
-        recog.run()
+        duration = duration_audio(filename)
         text = Content(
             title=form.title_text.data,
             text_en=form.text_en.data,
@@ -40,6 +33,11 @@ def process_create():
         )
         db.session.add(text)
         db.session.commit()
+        # recognizer = Recognizer(filename, text)
+        # Recognizer.run.delay(filename, form.title_text.data)
+        # recognizer = Recognizer(filename, text)
+        # recognizer.delay()
+        run_run.delay(form.title_text.data)
         return redirect(url_for('text.create'))
     return redirect(url_for('text.create'))
 

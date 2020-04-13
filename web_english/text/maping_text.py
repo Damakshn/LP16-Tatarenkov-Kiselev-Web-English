@@ -5,13 +5,17 @@ import urllib.request
 from pydub import AudioSegment
 
 from config import Config
+from web_english import db, celery
+from web_english.models import Chunk, Content
 
 
-class Recognizer:
+class Recognizer():
 
-    def __init__(self, audiofile, title):
+    def __init__(self, title):
+        audiofile = create_filename(title)
+        content = Content.query.filter(Content.title == title).first()
         self.audio = AudioSegment.from_mp3(audiofile)
-        self.title = title
+        self.content = content
 
     def chunk_audiofile(self):
         length_audio = len(self.audio)
@@ -33,10 +37,10 @@ class Recognizer:
             if end >= length_audio:
                 end = length_audio
             chunk = self.audio[start:end]
-            filename = f'web_english/text/uploads/audio/chunks/{self.title}chunk{str(counter)}.ogg'
+            filename = f'web_english/text/uploads/audio/chunks/{self.content.title}chunk{str(counter)}.ogg'
             chunks.append(filename)
             chunk.export(filename, format='ogg')
-            print(f"Processing {self.title}chunk{counter}. Start = {start} End = {end}")
+            print(f"Processing {self.content.title}chunk{counter}. Start = {start} End = {end}")
             counter += 1
         return chunks
 
@@ -63,65 +67,73 @@ class Recognizer:
 
             if decodedData.get("error_code") is None:
                 chunks_result.append(decodedData.get("result"))
+        for chunk in chunks_result:
+            save_recognized = Chunk(chunks_recognized=chunk,
+                                    id_content=self.content.id)
+            db.session.add(save_recognized)
+            db.session.commit()
         return chunks_result
 
-    def run(self):
-        self.send_ya_speech_kit(self.chunk_audiofile())
+    def maping_text(self, chunks_result):
+        # Убираем из текста все знаки препинания и разбиваем по словам
+        split_text = re.sub("[.,!?;:]", "", self.content.text_en).lower().split()
 
+        # Та самая секунда, на которой находится диктор
+        second = 0
 
-# На вход принемаем оригинальный текст и список распознанных отрывков
-def maping_text(text, chunks_result):
-    # Убираем из текста все знаки препинания и разбиваем по словам
-    split_text = re.sub("[.,!?;:]", "", text).lower().split()
+        # Номер слова и само слово в тексте, на котором находится диктор
+        last_word = [0, None, second]
+        last_words = [last_word]
 
-    # Та самая секунда, на которой находится диктор
-    second = 0
+        for recognized in chunks_result:
+            # Каждый отрывок - это 3 секунды чтения диктора
+            second += 3
 
-    # Номер слова и само слово в тексте, на котором находится диктор
-    last_word = [0, None, second]
-    list_last_word = [last_word]
+            # Отрезок оригинального текста, который будет сравниваться с
+            # определенным распознанным отрывком
+            # 15  - это примерное кол-во слов, которое диктор может произнести за 3 скунды
+            # Можно поставить хоть 500, но тогда будет дольше считать. Но если меньше 15, то
+            # split_recognized может оказать больше, а это неправильно
+            cut_split_text = split_text[last_word[0]:last_word[0] + 15]
 
-    for recognized in chunks_result:
-        # Каждый отрывок - это 3 секунды чтения диктора
-        second += 3
+            # Разбиваем распознанный отрывок на слова и приводим к нижнему регистру
+            split_recognized = recognized.lower().split()
 
-        # Отрезок оригинального текста, который будет сравниваться с
-        # определенным распознанным отрывком
-        # 15  - это примерное кол-во слов, которое диктор может произнести за 3 скунды
-        # Можно поставить хоть 500, но тогда будет дольше считать. Но если меньше 15, то
-        # split_recognized может оказать больше, а это неправильно
-        cut_split_text = split_text[last_word[0]:last_word[0] + 15]
+            # Перебираем каждое слово в оригинальном отрезке
+            for word in cut_split_text:
 
-        # Разбиваем распознанный отрывок на слова и приводим к нижнему регистру
-        split_recognized = recognized.lower().split()
+                # Если находим это слово в распознанном, то записываем его как последнее найденное слово
+                # и удаляем первое это слово из распознанного отрывка, чтобы больше не встречалось
+                if word in split_recognized:
+                    medium_word = word
+                    split_recognized.remove(word)
 
-        # Перебираем каждое слово в оригинальном отрезке
-        for word in cut_split_text:
+            # Кол-во одинаковых "последних" слов в распознанном отрезке. Отнимаем 1, чтобы можно было
+            # использовать его в списке повторяющихся слов в оригинальном отрезке
+            number_duplicate = recognized.lower().split().count(medium_word) - 1
 
-            # Если находим это слово в распознанном, то записываем его как последнее найденное слово
-            # и удаляем первое это слово из распознанного отрывка, чтобы больше не встречалось
-            if word in split_recognized:
-                medium_word = word
-                split_recognized.remove(word)
+            # Если это кол-во равно 1 (не забываем, что оняли 1 выше), то прибавляем к
+            # индексу найденного последнего слова индекс предыдущего во всем тексте - это
+            # будет индекс нашего найденного последнего слова
+            if number_duplicate == 0:
+                number_word = cut_split_text.index(medium_word) + last_word[0]
 
-        # Кол-во одинаковых "последних" слов в распознанном отрезке. Отнимаем 1, чтобы можно было
-        # использовать его в списке повторяющихся слов в оригинальном отрезке
-        number_duplicate = recognized.lower().split().count(medium_word) - 1
+            # Иначе ищем индекс последнего слова, которое было по порядку на том месте,
+            # сколько встречалось в распознанном тексте
+            else:
+                number_word_cut_split_text = duplicate_word(cut_split_text, medium_word, number_duplicate)
+                number_word = number_word_cut_split_text + last_word[0]
+            last_word = [number_word, medium_word, second]
+            last_words.append(last_word)
+        return last_words
 
-        # Если это кол-во равно 1 (не забываем, что оняли 1 выше), то прибавляем к
-        # индексу найденного последнего слова индекс предыдущего во всем тексте - это
-        # будет индекс нашего найденного последнего слова
-        if number_duplicate == 0:
-            number_word = cut_split_text.index(medium_word) + last_word[0]
-
-        # Иначе ищем индекс последнего слова, которое было по порядку на том месте,
-        # сколько встречалось в распознанном тексте
-        else:
-            number_word_cut_split_text = duplicate_word(cut_split_text, medium_word, number_duplicate)
-            number_word = number_word_cut_split_text + last_word[0]
-        last_word = [number_word, medium_word, second]
-        list_last_word.append(last_word)
-    return list_last_word
+    @classmethod
+    def run(cls, title):
+        chunks = Recognizer().chunk_audiofile()
+        chunks_result = Recognizer().send_ya_speech_kit(chunks)
+        last_words = Recognizer().maping_text(chunks_result)
+        print(last_words)
+        return cls.last_words
 
 
 def duplicate_word(cut_split_text, medium_word, number_duplicate):
@@ -136,3 +148,16 @@ def duplicate_word(cut_split_text, medium_word, number_duplicate):
         start_at = duplicate
     result = duplicates[number_duplicate]
     return result
+
+
+@celery.task
+def run_run(title):
+    run = Recognizer.run(title)
+    return run
+
+
+def create_filename(title):
+    filename_draft = re.sub(r'\s', r'_', title.lower())
+    filename_without_mp3 = re.sub(r'\W', r'', filename_draft)
+    filename = f'{Config.UPLOADED_AUDIOS_DEST}/{filename_without_mp3}.mp3'
+    return filename
