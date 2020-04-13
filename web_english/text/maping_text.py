@@ -3,13 +3,15 @@ import re
 import urllib.request
 
 from pydub import AudioSegment
+from celery import Task
 
 from config import Config
-from web_english import db, celery
+from web_english import db
 from web_english.models import Chunk, Content
 
 
-class Recognizer():
+class Recognizer(Task):
+    ignore_result = True
 
     def __init__(self, title):
         audiofile = create_filename(title)
@@ -127,13 +129,14 @@ class Recognizer():
             last_words.append(last_word)
         return last_words
 
-    @classmethod
-    def run(cls, title):
-        chunks = Recognizer().chunk_audiofile()
-        chunks_result = Recognizer().send_ya_speech_kit(chunks)
-        last_words = Recognizer().maping_text(chunks_result)
-        print(last_words)
-        return cls.last_words
+
+def run(title):
+    recognizer = Recognizer()
+    chunks = recognizer.chunk_audiofile()
+    chunks_result = recognizer.send_ya_speech_kit(chunks)
+    last_words = recognizer.maping_text(chunks_result)
+    print(last_words)
+    return last_words
 
 
 def duplicate_word(cut_split_text, medium_word, number_duplicate):
@@ -150,10 +153,10 @@ def duplicate_word(cut_split_text, medium_word, number_duplicate):
     return result
 
 
-@celery.task
-def run_run(title):
-    run = Recognizer.run(title)
-    return run
+# @celery.task
+# def run_run(title):
+#     run = Recognizer.run(title)
+#     return run
 
 
 def create_filename(title):
