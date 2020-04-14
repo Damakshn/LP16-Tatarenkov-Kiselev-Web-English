@@ -81,6 +81,9 @@ class Content(db.Model, ServiceMixin):
 class Chunk(db.Model, ServiceMixin):
     id = db.Column(db.Integer, primary_key=True)
     chunks_recognized = db.Column(db.Text)
+    word = db.Column(db.String)
+    word_number = db.Column(db.Integer)
+    word_time = db.Column(db.Integer)
     id_content = db.Column(db.Integer, db.ForeignKey("content.id"))
 
     def __str__(self):

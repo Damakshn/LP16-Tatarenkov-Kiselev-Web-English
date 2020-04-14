@@ -1,4 +1,4 @@
-from flask import render_template, url_for, redirect
+from flask import render_template, url_for, redirect, flash
 from pydub import AudioSegment
 
 from web_english.text.maping_text import run, create_filename
@@ -24,7 +24,8 @@ def process_create():
     if form.validate_on_submit():
         filename = create_filename(form.title_text.data)
         audios.save(form.audio.data, name=filename)
-        duration = duration_audio(filename)
+        audio = AudioSegment.from_file_using_temporary_files(filename)
+        duration = len(audio)
         text = Content(
             title=form.title_text.data,
             text_en=form.text_en.data,
@@ -34,11 +35,6 @@ def process_create():
         db.session.add(text)
         db.session.commit()
         run.delay(form.title_text.data)
+        flash('Ваш текст сохранен! Обработка текста может занять некоторое время.')
         return redirect(url_for('text.create'))
     return redirect(url_for('text.create'))
-
-
-def duration_audio(filename):
-    audio = AudioSegment.from_file_using_temporary_files(filename)
-    duration_audio = len(audio)
-    return duration_audio

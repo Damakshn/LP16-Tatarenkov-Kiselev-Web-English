@@ -44,7 +44,6 @@ class Recognizer():
         return chunks
 
     def send_ya_speech_kit(self, chunks):
-        content = Content.query.filter(Content.title == self.title).first()
         chunks_result = []
         for chunk in chunks:
             # Эта часть кода взята с яндекса и изменена под наш проект. Названия переменных
@@ -67,11 +66,6 @@ class Recognizer():
 
             if decodedData.get("error_code") is None:
                 chunks_result.append(decodedData.get("result"))
-        for chunk in chunks_result:
-            save_recognized = Chunk(chunks_recognized=chunk,
-                                    id_content=content.id)
-            db.session.add(save_recognized)
-            db.session.commit()
         return chunks_result
 
     def maping_text(self, chunks_result):
@@ -125,6 +119,15 @@ class Recognizer():
                 number_word_cut_split_text = duplicate_word(cut_split_text, medium_word, number_duplicate)
                 number_word = number_word_cut_split_text + last_word[0]
             last_word = [number_word, medium_word, second]
+            # Запись в базу данных
+            words_saved = Chunk(chunks_recognized=recognized,
+                                id_content=content.id,
+                                word=last_word[1],
+                                word_number=last_word[0],
+                                word_time=last_word[2]
+                                )
+            db.session.add(words_saved)
+            db.session.commit()
             last_words.append(last_word)
         return last_words
 
