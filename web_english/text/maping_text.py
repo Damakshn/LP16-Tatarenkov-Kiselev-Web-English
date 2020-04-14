@@ -3,24 +3,21 @@ import re
 import urllib.request
 
 from pydub import AudioSegment
-from celery import Task
 
 from config import Config
-from web_english import db
+from web_english import db, celery
 from web_english.models import Chunk, Content
 
 
-class Recognizer(Task):
-    ignore_result = True
+class Recognizer():
 
     def __init__(self, title):
-        audiofile = create_filename(title)
-        content = Content.query.filter(Content.title == title).first()
-        self.audio = AudioSegment.from_mp3(audiofile)
-        self.content = content
+        self.title = title
 
-    def chunk_audiofile(self):
-        length_audio = len(self.audio)
+    def chunk_audiofile(self, title):
+        audiofile = create_filename(self.title)
+        audio = AudioSegment.from_mp3(audiofile)
+        length_audio = len(audio)
         counter = 1
 
         # 3000 - это интервал в 3 секунды распознования текста. К этому числу мы будем
@@ -38,15 +35,16 @@ class Recognizer(Task):
                 end = start + interval
             if end >= length_audio:
                 end = length_audio
-            chunk = self.audio[start:end]
-            filename = f'web_english/text/uploads/audio/chunks/{self.content.title}chunk{str(counter)}.ogg'
+            chunk = audio[start:end]
+            filename = f'web_english/text/uploads/audio/chunks/{self.title}chunk{str(counter)}.ogg'
             chunks.append(filename)
             chunk.export(filename, format='ogg')
-            print(f"Processing {self.content.title}chunk{counter}. Start = {start} End = {end}")
+            print(f"Processing {self.title}chunk{counter}. Start = {start} End = {end}")
             counter += 1
         return chunks
 
     def send_ya_speech_kit(self, chunks):
+        content = Content.query.filter(Content.title == self.title).first()
         chunks_result = []
         for chunk in chunks:
             # Эта часть кода взята с яндекса и изменена под наш проект. Названия переменных
@@ -71,14 +69,15 @@ class Recognizer(Task):
                 chunks_result.append(decodedData.get("result"))
         for chunk in chunks_result:
             save_recognized = Chunk(chunks_recognized=chunk,
-                                    id_content=self.content.id)
+                                    id_content=content.id)
             db.session.add(save_recognized)
             db.session.commit()
         return chunks_result
 
     def maping_text(self, chunks_result):
+        content = Content.query.filter(Content.title == self.title).first()
         # Убираем из текста все знаки препинания и разбиваем по словам
-        split_text = re.sub("[.,!?;:]", "", self.content.text_en).lower().split()
+        split_text = re.sub("[.,!?;:]", "", content.text_en).lower().split()
 
         # Та самая секунда, на которой находится диктор
         second = 0
@@ -130,12 +129,12 @@ class Recognizer(Task):
         return last_words
 
 
+@celery.task
 def run(title):
-    recognizer = Recognizer()
-    chunks = recognizer.chunk_audiofile()
+    recognizer = Recognizer(title)
+    chunks = recognizer.chunk_audiofile(title)
     chunks_result = recognizer.send_ya_speech_kit(chunks)
     last_words = recognizer.maping_text(chunks_result)
-    print(last_words)
     return last_words
 
 
@@ -151,12 +150,6 @@ def duplicate_word(cut_split_text, medium_word, number_duplicate):
         start_at = duplicate
     result = duplicates[number_duplicate]
     return result
-
-
-# @celery.task
-# def run_run(title):
-#     run = Recognizer.run(title)
-#     return run
 
 
 def create_filename(title):

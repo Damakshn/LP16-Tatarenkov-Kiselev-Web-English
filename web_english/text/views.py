@@ -1,7 +1,7 @@
 from flask import render_template, url_for, redirect
 from pydub import AudioSegment
 
-from web_english.text.maping_text import Recognizer, create_filename
+from web_english.text.maping_text import run, create_filename
 from web_english import db
 from web_english.text.forms import TextForm
 from web_english.models import Content
@@ -33,11 +33,7 @@ def process_create():
         )
         db.session.add(text)
         db.session.commit()
-        # recognizer = Recognizer(filename, text)
-        # Recognizer.run.delay(filename, form.title_text.data)
-        recognizer = Recognizer(form.title_text.data)
-        # recognizer.delay()
-        recognizer.delay(form.title_text.data)
+        run.delay(form.title_text.data)
         return redirect(url_for('text.create'))
     return redirect(url_for('text.create'))
 
