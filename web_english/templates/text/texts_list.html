@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<h1><p>{{ title }}</p></h1>
+<h4>
+    <ol>
+        {% for text in texts %}
+        <li>
+            <a href="{{ url_for('text.edit_text', text_id=text.id) }}">{{ text.title_text }}</a><br>
+        </li>
+        {% endfor %}
+    </ol>
+</h4>
+{% endblock %}

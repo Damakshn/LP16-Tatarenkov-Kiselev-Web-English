@@ -1,6 +1,6 @@
 import json
 import re
-import urllib.request
+import requests
 
 from pydub import AudioSegment
 
@@ -36,7 +36,7 @@ class Recognizer():
             if end >= length_audio:
                 end = length_audio
             chunk = audio[start:end]
-            filename = f'web_english/text/uploads/audio/chunks/{self.title}chunk{str(counter)}.ogg'
+            filename = f'{Config.UPLOADED_AUDIOS_DEST}/chunks/{self.title}chunk{str(counter)}.ogg'
             chunks.append(filename)
             chunk.export(filename, format='ogg')
             print(f"Processing {self.title}chunk{counter}. Start = {start} End = {end}")
@@ -50,26 +50,22 @@ class Recognizer():
             # взяты оригинальные (изменены значения).
             with open(chunk, "rb") as f:
                 data = f.read()
-
-            params = "&".join([
-                "topic=general",
-                "folderId=%s" % Config.FOLDER_ID,
-                "lang=en-US"
-            ])
-
-            url = urllib.request.Request("https://stt.api.cloud.yandex.net/speech/v1/stt:recognize?%s" % params,
-                                         data=data)
-            url.add_header("Authorization", "Api-Key %s" % Config.API_KEY)
-
-            responseData = urllib.request.urlopen(url).read().decode('UTF-8')
-            decodedData = json.loads(responseData)
-
-            if decodedData.get("error_code") is None:
-                chunks_result.append(decodedData.get("result"))
+            params = {
+                      'lang': 'en-US',
+                      'folderId': Config.FOLDER_ID
+            }
+            url = "https://stt.api.cloud.yandex.net/speech/v1/stt:recognize"
+            headers = {"Authorization": f"Api-Key {Config.API_KEY}"}
+            response = requests.post(url, params=params, data=data, headers=headers)
+            decode_response = response.content.decode('UTF-8')
+            chunk = json.loads(decode_response)
+            if chunk.get("error_code") is None:
+                chunks_result.append(chunk.get("result"))
         return chunks_result
 
-    def maping_text(self, chunks_result):
-        content = Content.query.filter(Content.title == self.title).first()
+    def maping_text(self, chunks_result, title=None):
+        content = Content.query.filter(Content.title_text == self.title).first()
+
         # Убираем из текста все знаки препинания и разбиваем по словам
         split_text = re.sub("[.,!?;:]", "", content.text_en).lower().split()
 
@@ -78,7 +74,8 @@ class Recognizer():
 
         # Номер слова и само слово в тексте, на котором находится диктор
         last_word = [0, None, second]
-        last_words = [last_word]
+        chunks_text = []
+        chunks_saved = []
 
         for recognized in chunks_result:
             # Каждый отрывок - это 3 секунды чтения диктора
@@ -119,17 +116,34 @@ class Recognizer():
                 number_word_cut_split_text = duplicate_word(cut_split_text, medium_word, number_duplicate)
                 number_word = number_word_cut_split_text + last_word[0]
             last_word = [number_word, medium_word, second]
-            # Запись в базу данных
-            words_saved = Chunk(chunks_recognized=recognized,
-                                id_content=content.id,
-                                word=last_word[1],
-                                word_number=last_word[0],
-                                word_time=last_word[2]
-                                )
-            db.session.add(words_saved)
-            db.session.commit()
-            last_words.append(last_word)
-        return last_words
+            chunk_saved = [recognized, content.id, last_word[1], last_word[0], last_word[2]]
+            chunks_saved.append(chunk_saved)
+            chunk_text = ' '.join(cut_split_text)
+            chunks_text.append(chunk_text)
+        return chunks_text, chunks_saved
+
+    def save_chunks(self, chunks_saved):
+        for chunk_saved in chunks_saved:
+            save = Chunk(chunks_recognized=chunk_saved[0],
+                         id_content=chunk_saved[1],
+                         word=chunk_saved[2],
+                         word_number=chunk_saved[3],
+                         word_time=chunk_saved[4]
+                         )
+            db.session.add(save)
+        db.session.commit()
+
+    def save_edit_chunks(self, chunks_saved, chunks):
+        count = 0
+        for chunk in chunks:
+            chunk.chunks_recognized = chunks_saved[count][0]
+            chunk.id_content = chunks_saved[count][1]
+            chunk.word = chunks_saved[count][2]
+            chunk.word_number = chunks_saved[count][3]
+            chunk.word_time = chunks_saved[count][4]
+            db.session.add(chunk)
+            count += 1
+        db.session.commit()
 
 
 @celery.task
@@ -137,8 +151,8 @@ def run(title):
     recognizer = Recognizer(title)
     chunks = recognizer.chunk_audiofile(title)
     chunks_result = recognizer.send_ya_speech_kit(chunks)
-    last_words = recognizer.maping_text(chunks_result)
-    return last_words
+    chunks_saved = recognizer.maping_text(chunks_result)
+    recognizer.save_chunks(chunks_saved[1])
 
 
 def duplicate_word(cut_split_text, medium_word, number_duplicate):
