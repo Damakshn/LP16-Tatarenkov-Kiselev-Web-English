@@ -18,19 +18,19 @@
             <a class="nav-link" href="#">Обучение</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="/text/create">Добавить текст</a>
+            <a class="nav-link" href="{{ url_for('text.create') }}">Добавить текст</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="/text/texts_list">Тексты для редактирования</a>
+            <a class="nav-link" href="{{ url_for('text.texts_list') }}">Тексты для редактирования</a>
           </li>
         </ul>
         {% if current_user.is_authenticated %}
             <span>Вы вошли как {{ current_user.username }}</span>
-            <a class="nav-link" href="/auth/logout">Выйти</a>
+            <a class="nav-link" href="{{ url_for('auth.logout') }}">Выйти</a>
         {% elif not is_auth_page %}
-            <a class="nav-link" href="/auth/login">Войти</a>
-            <a class="nav-link" href="/auth/register">Регистрация</a>
-            <a class="nav-link" href="/auth/reset_password_request">Забыли пароль?</a>
+            <a class="nav-link" href="{{ url_for('auth.login') }}">Войти</a>
+            <a class="nav-link" href="{{ url_for('auth.register') }}">Регистрация</a>
+            <a class="nav-link" href="{{ url_for('auth.reset_password_request') }}">Забыли пароль?</a>
         {% endif %}
       </div>
     </nav>

@@ -15,7 +15,7 @@ class Recognizer():
         self.title = title
 
     def chunk_audiofile(self, title):
-        audiofile = create_filename(self.title)
+        audiofile = create_filename(self.title)[0]
         audio = AudioSegment.from_mp3(audiofile)
         length_audio = len(audio)
         counter = 1
@@ -36,10 +36,10 @@ class Recognizer():
             if end >= length_audio:
                 end = length_audio
             chunk = audio[start:end]
-            filename = f'{Config.UPLOADED_AUDIOS_DEST}/chunks/{self.title}chunk{str(counter)}.ogg'
-            chunks.append(filename)
-            chunk.export(filename, format='ogg')
-            print(f"Processing {self.title}chunk{counter}. Start = {start} End = {end}")
+            chunk_name = f"{create_filename(self.title)[1]}chunk{str(counter)}.ogg"
+            chunks.append(chunk_name)
+            chunk.export(chunk_name, format='ogg')
+            print(f"Processing {chunk_name}chunk{counter}. Start = {start} End = {end}")
             counter += 1
         return chunks
 
@@ -70,16 +70,16 @@ class Recognizer():
         split_text = re.sub("[.,!?;:]", "", content.text_en).lower().split()
 
         # Та самая секунда, на которой находится диктор
-        second = 0
+        current_second = 0
 
         # Номер слова и само слово в тексте, на котором находится диктор
-        last_word = [0, None, second]
+        last_word = [0, None, current_second]
         chunks_text = []
         chunks_saved = []
 
         for recognized in chunks_result:
             # Каждый отрывок - это 3 секунды чтения диктора
-            second += 3
+            current_second += 3
 
             # Отрезок оригинального текста, который будет сравниваться с
             # определенным распознанным отрывком
@@ -115,7 +115,7 @@ class Recognizer():
             else:
                 number_word_cut_split_text = duplicate_word(cut_split_text, medium_word, number_duplicate)
                 number_word = number_word_cut_split_text + last_word[0]
-            last_word = [number_word, medium_word, second]
+            last_word = [number_word, medium_word, current_second]
             chunk_saved = [recognized, content.id, last_word[1], last_word[0], last_word[2]]
             chunks_saved.append(chunk_saved)
             chunk_text = ' '.join(cut_split_text)
@@ -125,7 +125,7 @@ class Recognizer():
     def save_chunks(self, chunks_saved):
         for chunk_saved in chunks_saved:
             save = Chunk(chunks_recognized=chunk_saved[0],
-                         id_content=chunk_saved[1],
+                         content_id=chunk_saved[1],
                          word=chunk_saved[2],
                          word_number=chunk_saved[3],
                          word_time=chunk_saved[4]
@@ -137,7 +137,7 @@ class Recognizer():
         count = 0
         for chunk in chunks:
             chunk.chunks_recognized = chunks_saved[count][0]
-            chunk.id_content = chunks_saved[count][1]
+            chunk.content_id = chunks_saved[count][1]
             chunk.word = chunks_saved[count][2]
             chunk.word_number = chunks_saved[count][3]
             chunk.word_time = chunks_saved[count][4]
@@ -147,7 +147,7 @@ class Recognizer():
 
 
 @celery.task
-def run(title):
+def recognition_start(title):
     recognizer = Recognizer(title)
     chunks = recognizer.chunk_audiofile(title)
     chunks_result = recognizer.send_ya_speech_kit(chunks)
@@ -172,5 +172,6 @@ def duplicate_word(cut_split_text, medium_word, number_duplicate):
 def create_filename(title):
     filename_draft = re.sub(r'\s', r'_', title.lower())
     filename_without_mp3 = re.sub(r'\W', r'', filename_draft)
-    filename = f'{Config.UPLOADED_AUDIOS_DEST}/{filename_without_mp3}.mp3'
-    return filename
+    filename_mp3 = f'{Config.UPLOADED_AUDIOS_DEST}/{filename_without_mp3}.mp3'
+    filename_ogg = f'{Config.UPLOADED_AUDIOS_DEST}/chunks/{filename_without_mp3}'
+    return filename_mp3, filename_ogg
