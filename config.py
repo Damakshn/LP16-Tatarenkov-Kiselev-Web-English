@@ -13,7 +13,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Upload Audio configuration
-    UPLOADED_AUDIOS_DEST = f'{BASE_DIR}/web_english/uploads/audio'
+    UPLOADED_AUDIOS_DEST = f'{BASE_DIR}/web_english/text/uploads/audio'
 
     # Send Email configuration
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER')
@@ -26,6 +26,10 @@ class Config:
     # Celery configuration
     CELERY_BROKER_URL = 'redis://localhost:6379/0'
     CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
+    # Yandex SpeechKit configuration
+    FOLDER_ID = os.environ.get("FOLDER_ID_YANDEX")
+    API_KEY = os.environ.get("API_KEY_YANDEX")
 
 
 class DevConfig(Config):
