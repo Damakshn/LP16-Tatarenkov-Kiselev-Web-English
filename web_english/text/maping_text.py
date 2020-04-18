@@ -43,27 +43,23 @@ class Recognizer():
             counter += 1
         return chunks
 
-    def send_ya_speech_kit(self, chunks):
-        chunks_result = []
-        for chunk in chunks:
-            # Эта часть кода взята с яндекса и изменена под наш проект. Названия переменных
-            # взяты оригинальные (изменены значения).
-            with open(chunk, "rb") as f:
-                data = f.read()
-            params = {
-                      'lang': 'en-US',
-                      'folderId': Config.FOLDER_ID
-            }
-            url = "https://stt.api.cloud.yandex.net/speech/v1/stt:recognize"
-            headers = {"Authorization": f"Api-Key {Config.API_KEY}"}
-            response = requests.post(url, params=params, data=data, headers=headers)
-            decode_response = response.content.decode('UTF-8')
-            chunk = json.loads(decode_response)
-            if chunk.get("error_code") is None:
-                chunks_result.append(chunk.get("result"))
-        return chunks_result
+    def send_ya_speech_kit(self, chunk):
+        with open(chunk, "rb") as f:
+            data = f.read()
+        params = {
+                    'lang': 'en-US',
+                    'folderId': Config.FOLDER_ID
+        }
+        url = "https://stt.api.cloud.yandex.net/speech/v1/stt:recognize"
+        headers = {"Authorization": f"Api-Key {Config.API_KEY}"}
+        response = requests.post(url, params=params, data=data, headers=headers)
+        decode_response = response.content.decode('UTF-8')
+        chunk = json.loads(decode_response)
+        if chunk.get("error_code") is None:
+            return chunk.get("result")
+        return False
 
-    def maping_text(self, chunks_result, title=None):
+    def maping_text(self, chunk_result, title=None):
         content = Content.query.filter(Content.title_text == self.title).first()
 
         # Убираем из текста все знаки препинания и разбиваем по словам
@@ -150,8 +146,9 @@ class Recognizer():
 def recognition_start(title):
     recognizer = Recognizer(title)
     chunks = recognizer.chunk_audiofile(title)
-    chunks_result = recognizer.send_ya_speech_kit(chunks)
-    chunks_saved = recognizer.maping_text(chunks_result)
+    for chunk in chunks:
+        chunk_result = recognizer.send_ya_speech_kit(chunk)
+        chunks_saved = recognizer.maping_text(chunks_result)
     recognizer.save_chunks(chunks_saved[1])
 
 
