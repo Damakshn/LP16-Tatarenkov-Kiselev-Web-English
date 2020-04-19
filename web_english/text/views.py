@@ -1,10 +1,9 @@
 from flask import render_template, url_for, redirect, flash, request
 from pydub import AudioSegment
 
-from web_english.text.maping_text import recognition_start, create_filename
 from web_english import db
 from web_english.text.forms import TextForm, EditForm
-from web_english.text.maping_text import Recognizer
+from web_english.text.maping_text import Recognizer, create_name, recognition_start
 from web_english.models import Content, Chunk
 from web_english import audios
 
@@ -23,7 +22,7 @@ def create():
 def process_create():
     form = TextForm()
     if form.validate_on_submit():
-        filename = create_filename(form.title_text.data)[0]
+        filename = create_name(form.title_text.data)[0]
         audios.save(form.audio.data, name=filename)
         audio = AudioSegment.from_file_using_temporary_files(filename)
         duration = len(audio)
@@ -63,8 +62,8 @@ def edit_text(text_id):
         recognized_chunk = chunk.chunks_recognized.lower()
         chunks_resault.append(recognized_chunk)
     recognizer = Recognizer(title_text)
-    chunks_text = recognizer.maping_text(chunks_resault, title=title_text)
-    merged_chunks = list(zip(chunks_text[0], chunks_resault))
+    chunks_text = recognizer.list_chunks_text(text_id, chunks_resault)
+    merged_chunks = list(zip(chunks_text, chunks_resault))
     return render_template('text/edit_text.html',
                            title_page=title_page,
                            merged_chunks=merged_chunks,
@@ -81,7 +80,6 @@ def process_edit_text():
     form = EditForm()
     recognizer = Recognizer(title_text)
     if form.validate_on_submit():
-        saved_chunks = recognizer.maping_text(edited_chunks, title=title_text)
-        recognizer.save_edit_chunks(saved_chunks[1], chunks)
+        recognizer.edit_maping(edited_chunks, chunks)
         flash('Ваши правки сохранены!')
         return redirect(url_for('text.texts_list'))

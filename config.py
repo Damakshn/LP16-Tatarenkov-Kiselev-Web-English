@@ -31,6 +31,10 @@ class Config:
     FOLDER_ID = os.environ.get("FOLDER_ID_YANDEX")
     API_KEY = os.environ.get("API_KEY_YANDEX")
 
+    # 3000 - это интервал в 3 секунды распознования текста. К этому числу мы будем
+    # привязывать слова в оригинальном тексте.
+    INTERVAL = 3000
+
 
 class DevConfig(Config):
     DEBUG = True
