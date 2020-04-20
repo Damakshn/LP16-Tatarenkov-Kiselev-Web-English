@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="original_text">
+    {{ content.text_ru }}
+</div>
+<br>
+<button id="play_button" disabled="disabled">Play</button>
+<button id="pause_button" disabled="disabled">Pause</button>
+<button id="stop_button" disabled="disabled">Stop</button>
+<br>
+<div id="subs">
+</div>
+{% endblock %}
+{% block js %}
+<script src="{{ url_for('static', filename='subtitle.bundle.js') }}""></script>
+<script>
+    const sourceSRT = `
+1
+00:00:00,000 --> 00:00:04,400
+Bla Bla Bla Bla
+
+2
+00:00:04,600 --> 00:00:07,800
+Blo Blo Blo Blo
+`
+    
+    const parsedSRT = Subtitle.parse(sourceSRT);
+    const subs = [];
+    for (i = 0; i < parsedSRT.length; i++){
+        newSubsChunk = {"timing": parsedSRT[i]["start"], "text": parsedSRT[i]["text"]};
+        subs.push(newSubsChunk);
+    }
+
+    var subs_block = document.getElementById("subs");
+    audio = new Audio("{{ url_for('text.serve_audio', text_id=content.id) }}");
+    audio.volume = 0.5;
+    var audioDuration = 0;
+    audio.onloadedmetadata = function(){
+        audioDuration = audio.duration;
+        enable_controls()
+    }
+
+    var timePassed = 0;
+    var subsTimer = null;
+    var subsBuffer = [];
+    var pause = false;
+    var stop = false;
+    const INTERVAL_LENGTH = 500;
+    const MILLISECONDS_PER_SECOND = 1000
+
+    enable_controls = function() {
+        document.getElementById("play_button").disabled = false;
+        document.getElementById("pause_button").disabled = false;
+        document.getElementById("stop_button").disabled = false;
+    }
+
+    play_from_beginning = function(){
+        timePassed = 0;
+        if (subsTimer != null) {
+            clearInterval(subsTimer);
+        }
+        clear_subs_block()
+        subsBuffer = subs.slice()
+        pause = false;
+        stop = false;
+        audio.currentTime = 0;
+        subsTimer = setInterval(show_new_subs, INTERVAL_LENGTH);
+        audio.play()
+        return;
+    }
+
+    resume_playing = function(){
+        if (stop) {
+            return;
+        
+        }
+        // округляем прошедшее время к предыдущей секунде
+        timePassed = timePassed - timePassed % MILLISECONDS_PER_SECOND;
+        audio.currentTime = timePassed / MILLISECONDS_PER_SECOND;
+        pause = false;
+        audio.play()
+        console.log("resume on " + timePassed)
+        return;
+    }
+
+    set_pause = function(){
+        if (stop) {
+            return;
+        }
+        pause = true;
+        audio.pause()
+        console.log("pause on " + timePassed)
+        return;
+    }
+
+    stop_playing = function() {
+        stop = true;
+        pause = false;
+        clear_subs_block()
+        audio.pause();
+        audio.currentTime  = 0;
+        return;
+    }
+    
+    clear_subs_block = function() {
+        child = subs_block.firstElementChild;
+        while (child) {
+            subs_block.removeChild(child);
+            child = subs_block.firstElementChild;
+        }
+    }
+
+    show_new_subs = function() {
+        if (timePassed >= audioDuration || stop){
+            clearInterval(subsTimer);
+            return;
+        }
+        if (pause){
+            return;
+        }
+        buffer = []
+        while ((subsBuffer.length > 0) && (subsBuffer[0]["timing"] <= timePassed)){
+            buffer.push(subsBuffer[0]["text"]);
+            subsBuffer.splice(0, 1);
+        }
+        timePassed += INTERVAL_LENGTH;
+        new_element = document.createElement("p");
+        new_element.innerText = buffer.join(" ");
+        subs_block.appendChild(new_element);
+    }
+
+    play_button_handler = function() {
+        if (!pause) {
+            play_from_beginning();
+        } else {
+            resume_playing()
+        }
+        return;
+    }
+
+    pause_button_handler = function() {
+        if (!pause) {
+            set_pause();
+        } else {
+            resume_playing()
+        }
+        return;
+    }
+
+    stop_button_handler = function() {
+        stop_playing()
+        return;
+    }
+
+    document.getElementById("play_button").addEventListener("click", play_button_handler);
+
+    document.getElementById("pause_button").addEventListener("click", pause_button_handler);
+
+    document.getElementById("stop_button").addEventListener("click", stop_button_handler);
+</script>
+{% endblock %}

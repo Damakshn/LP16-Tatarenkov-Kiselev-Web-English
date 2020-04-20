@@ -8,3 +8,4 @@ env/
 .DS_Store
 *.mp3
 *.wav
+*.bundle.js

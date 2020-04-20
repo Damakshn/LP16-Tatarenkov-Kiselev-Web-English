@@ -72,6 +72,7 @@ class Content(db.Model, ServiceMixin):
     text_en = db.Column(db.Text, unique=True, nullable=False)
     text_ru = db.Column(db.Text, unique=True, nullable=False)
     duration = db.Column(db.Integer)
+    filename = db.Column(db.String)
 
     def __repr__(self):
         return f"<Content {self.title}>"
