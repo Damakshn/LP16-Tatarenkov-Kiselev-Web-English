@@ -72,6 +72,7 @@ class Content(db.Model, ServiceMixin):
     text_en = db.Column(db.Text, unique=True, nullable=False)
     text_ru = db.Column(db.Text, unique=True, nullable=False)
     duration = db.Column(db.Integer)
+    status = db.Column(db.String, default='Queued')
     chunks = db.relationship('Chunk', backref='content', lazy='dynamic')
 
     def __repr__(self):

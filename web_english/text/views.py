@@ -1,4 +1,6 @@
-from flask import render_template, url_for, redirect, flash, request
+import os.path
+
+from flask import render_template, url_for, redirect, flash, request, jsonify
 from pydub import AudioSegment
 
 from web_english import db
@@ -83,3 +85,14 @@ def process_edit_text():
         recognizer.edit_maping(edited_chunks, chunks)
         flash('Ваши правки сохранены!')
         return redirect(url_for('text.texts_list'))
+
+
+def progress_bar(text_id):
+    text = Content.query.filter(Content.id == text_id).first()
+    chunks = Chunk.query.filter(Chunk.content_id == text_id).all()
+    title_text = text.title_text
+    folder_name = create_name(title_text)[2]
+    amount_audio_chunks = len(os.listdir(folder_name))
+    amount_text_chunks = len(chunks)
+    progress = amount_text_chunks / amount_audio_chunks * 100
+    return jsonify({'progress': progress})

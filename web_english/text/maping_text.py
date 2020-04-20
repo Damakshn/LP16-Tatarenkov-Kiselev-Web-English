@@ -12,19 +12,32 @@ from web_english.models import Chunk, Content
 
 @celery.task
 def recognition_start(title):
+    text = Content.query.filter(Content.title_text == title).first()
+    text.status = 'Processing'
+    db.session.add(text)
+    db.session.commit()
     # Та самая секунда, на которой находится диктор
     current_second = 0
     chunk_maping = ['', 0, '', 0]
     recognizer = Recognizer(title)
-    chunks = recognizer.chunk_audiofile(title)
-    for chunk in chunks:
-        chunk_result = recognizer.send_ya_speech_kit(chunk)
-        chunk_maping = recognizer.maping_text(chunk_result, chunk_maping[3])[0]
-        if current_second == 0:
-            current_second += 2.5
-        else:
-            current_second += 3
-        recognizer.save_chunk(chunk_maping, current_second)
+    try:
+        chunks = recognizer.chunk_audiofile(title)
+        for chunk in chunks:
+            chunk_result = recognizer.send_ya_speech_kit(chunk)
+            chunk_maping = recognizer.maping_text(chunk_result, chunk_maping[3])[0]
+            if current_second == 0:
+                current_second += 2.5
+            else:
+                current_second += 3
+            recognizer.save_chunk(chunk_maping, current_second)
+        text.status = 'Done'
+        db.session.add(text)
+        db.session.commit()
+    except Exception:
+        text.status = 'Error'
+        db.session.add(text)
+        db.session.commit()
+        raise
 
 
 class Recognizer():
