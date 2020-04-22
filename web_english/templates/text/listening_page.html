@@ -31,13 +31,13 @@ Blo Blo Blo Blo
         subs.push(newSubsChunk);
     }
 
-    var subs_block = document.getElementById("subs");
+    var subsBlock = document.getElementById("subs");
     audio = new Audio("{{ url_for('text.serve_audio', text_id=content.id) }}");
     audio.volume = 0.5;
     var audioDuration = 0;
     audio.onloadedmetadata = function(){
         audioDuration = audio.duration;
-        enable_controls()
+        enableControls()
     }
 
     var timePassed = 0;
@@ -48,28 +48,28 @@ Blo Blo Blo Blo
     const INTERVAL_LENGTH = 500;
     const MILLISECONDS_PER_SECOND = 1000
 
-    enable_controls = function() {
+    enableControls = function() {
         document.getElementById("play_button").disabled = false;
         document.getElementById("pause_button").disabled = false;
         document.getElementById("stop_button").disabled = false;
     }
 
-    play_from_beginning = function(){
+    playFromBeginning = function(){
         timePassed = 0;
         if (subsTimer != null) {
             clearInterval(subsTimer);
         }
-        clear_subs_block()
+        clearSubsBlock()
         subsBuffer = subs.slice()
         pause = false;
         stop = false;
         audio.currentTime = 0;
-        subsTimer = setInterval(show_new_subs, INTERVAL_LENGTH);
+        subsTimer = setInterval(showNewSubs, INTERVAL_LENGTH);
         audio.play()
         return;
     }
 
-    resume_playing = function(){
+    resumePlaying = function(){
         if (stop) {
             return;
         
@@ -79,7 +79,6 @@ Blo Blo Blo Blo
         audio.currentTime = timePassed / MILLISECONDS_PER_SECOND;
         pause = false;
         audio.play()
-        console.log("resume on " + timePassed)
         return;
     }
 
@@ -89,28 +88,27 @@ Blo Blo Blo Blo
         }
         pause = true;
         audio.pause()
-        console.log("pause on " + timePassed)
         return;
     }
 
     stop_playing = function() {
         stop = true;
         pause = false;
-        clear_subs_block()
+        clearSubsBlock()
         audio.pause();
         audio.currentTime  = 0;
         return;
     }
     
-    clear_subs_block = function() {
-        child = subs_block.firstElementChild;
+    clearSubsBlock = function() {
+        child = subsBlock.firstElementChild;
         while (child) {
-            subs_block.removeChild(child);
-            child = subs_block.firstElementChild;
+            subsBlock.removeChild(child);
+            child = subsBlock.firstElementChild;
         }
     }
 
-    show_new_subs = function() {
+    showNewSubs = function() {
         if (timePassed >= audioDuration || stop){
             clearInterval(subsTimer);
             return;
@@ -124,38 +122,38 @@ Blo Blo Blo Blo
             subsBuffer.splice(0, 1);
         }
         timePassed += INTERVAL_LENGTH;
-        new_element = document.createElement("p");
-        new_element.innerText = buffer.join(" ");
-        subs_block.appendChild(new_element);
+        newElement = document.createElement("p");
+        newElement.innerText = buffer.join(" ");
+        subsBlock.appendChild(newElement);
     }
 
-    play_button_handler = function() {
+    playButtonHandler = function() {
         if (!pause) {
-            play_from_beginning();
+            playFromBeginning();
         } else {
-            resume_playing()
+            resumePlaying()
         }
         return;
     }
 
-    pause_button_handler = function() {
+    pauseButtonHandler = function() {
         if (!pause) {
             set_pause();
         } else {
-            resume_playing()
+            resumePlaying()
         }
         return;
     }
 
-    stop_button_handler = function() {
+    stopButtonHandler = function() {
         stop_playing()
         return;
     }
 
-    document.getElementById("play_button").addEventListener("click", play_button_handler);
+    document.getElementById("play_button").addEventListener("click", playButtonHandler);
 
-    document.getElementById("pause_button").addEventListener("click", pause_button_handler);
+    document.getElementById("pause_button").addEventListener("click", pauseButtonHandler);
 
-    document.getElementById("stop_button").addEventListener("click", stop_button_handler);
+    document.getElementById("stop_button").addEventListener("click", stopButtonHandler);
 </script>
 {% endblock %}
