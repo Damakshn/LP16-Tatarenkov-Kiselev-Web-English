@@ -1,3 +1,4 @@
+import os
 from flask import current_app, flash, redirect, render_template, request, send_from_directory, url_for
 from pydub import AudioSegment
 from web_english import db
@@ -96,6 +97,7 @@ def listen(text_id):
 
 def serve_audio(text_id):
     text = Content.query.get(text_id)
-    files_dir = current_app.config['UPLOADED_AUDIOS_DEST']
+    # ГОСТ Р 58281-2018
+    fdir, fname = os.path.split(text.filename)
     # ToDo audio does not exist error
-    return send_from_directory(files_dir, text.filename)
+    return send_from_directory(fdir, fname)
