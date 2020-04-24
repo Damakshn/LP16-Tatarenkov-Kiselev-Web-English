@@ -36,7 +36,6 @@ def process_create():
         )
         db.session.add(text)
         db.session.commit()
-        #  Используем Celery
         recognition_start.delay(form.title_text.data)
         flash('Ваш текст сохранен! Обработка текста может занять некоторое время.')
         return redirect(url_for('text.texts_list'))
@@ -46,10 +45,12 @@ def process_create():
 def texts_list():
     title = 'Список текстов'
     texts = Content.query.all()
+    status = 'Done'
     return render_template(
                            'text/texts_list.html',
                            title=title,
-                           texts=texts
+                           texts=texts,
+                           status=status
                            )
 
 
@@ -89,10 +90,14 @@ def process_edit_text():
 
 def progress_bar(text_id):
     text = Content.query.filter(Content.id == text_id).first()
+    if text is None:
+        data = {'status': 'The text is not found'}
+        return jsonify(data)
     chunks = Chunk.query.filter(Chunk.content_id == text_id).all()
     title_text = text.title_text
     folder_name = create_name(title_text)[2]
     amount_audio_chunks = len(os.listdir(folder_name))
     amount_text_chunks = len(chunks)
     progress = amount_text_chunks / amount_audio_chunks * 100
-    return jsonify({'progress': progress})
+    data = {'progress': progress, 'status': text.status}
+    return jsonify(data)
