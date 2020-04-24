@@ -1,7 +1,9 @@
+from datetime import timedelta
 import os.path
 
 from flask import render_template, url_for, redirect, flash, request, jsonify
 from pydub import AudioSegment
+from srt import Subtitle, compose
 
 from web_english import db
 from web_english.text.forms import TextForm, EditForm
@@ -101,3 +103,28 @@ def progress_bar(text_id):
     progress = amount_text_chunks / amount_audio_chunks * 100
     data = {'progress': progress, 'status': text.status}
     return jsonify(data)
+
+
+def create_srt(text_id):
+    text = Content.query.filter(Content.id == text_id).first()
+    chunks = Chunk.query.filter(Chunk.content_id == text_id).all()
+    split_text = text.text_en.split()
+    word_number_start = 0
+    word_number_end = 0
+    word_time_start = 0
+    word_time_end = 0
+    count = 1
+    subtitles = []
+    for chunk in chunks:
+        word_number_start = word_number_end
+        word_number_end = chunk.word_number + 1
+        word_time_start = word_time_end
+        word_time_end = chunk.word_time
+        split_srt = split_text[word_number_start: word_number_end]
+        join_srt = ' '.join(split_srt)
+        timedelta_start = timedelta(seconds=word_time_start)
+        timedelta_end = timedelta(seconds=word_time_end)
+        subtitle = Subtitle(index=count, start=timedelta_start, end=timedelta_end, content=join_srt)
+        subtitles.append(subtitle)
+        count += 1
+    return jsonify(compose(subtitles))
