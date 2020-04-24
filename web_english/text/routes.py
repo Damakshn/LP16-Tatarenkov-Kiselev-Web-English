@@ -7,3 +7,5 @@ bp.add_url_rule("/texts_list", "texts_list", views.texts_list)
 bp.add_url_rule("/edit_text/<text_id>", "edit_text", views.edit_text)
 bp.add_url_rule("/process_edit_text", "process_edit_text",
                 views.process_edit_text, methods=['POST'])
+bp.add_url_rule('/listen/<int:text_id>', "listen", views.listen)
+bp.add_url_rule('/audio/<int:text_id>', "serve_audio", views.serve_audio)

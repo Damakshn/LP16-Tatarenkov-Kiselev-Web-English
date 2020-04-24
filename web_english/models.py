@@ -73,6 +73,7 @@ class Content(db.Model, ServiceMixin):
     text_ru = db.Column(db.Text, unique=True, nullable=False)
     duration = db.Column(db.Integer)
     chunks = db.relationship('Chunk', backref='content', lazy='dynamic')
+    filename = db.Column(db.String)
 
     def __repr__(self):
         return f"<Content {self.title_text}>"

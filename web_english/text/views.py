@@ -1,10 +1,9 @@
-from flask import render_template, url_for, redirect, flash, request
+import os
+from flask import current_app, flash, redirect, render_template, request, send_from_directory, url_for
 from pydub import AudioSegment
-
-from web_english.text.maping_text import recognition_start, create_filename
 from web_english import db
 from web_english.text.forms import TextForm, EditForm
-from web_english.text.maping_text import Recognizer
+from web_english.text.maping_text import Recognizer, recognition_start, create_filename
 from web_english.models import Content, Chunk
 from web_english import audios
 
@@ -19,7 +18,6 @@ def create():
         enctype="multipart/form-data"
     )
 
-
 def process_create():
     form = TextForm()
     if form.validate_on_submit():
@@ -31,7 +29,8 @@ def process_create():
             title_text=form.title_text.data,
             text_en=form.text_en.data,
             text_ru=form.text_ru.data,
-            duration=duration
+            duration=duration,
+            filename=filename
         )
         db.session.add(text)
         db.session.commit()
@@ -85,3 +84,20 @@ def process_edit_text():
         recognizer.save_edit_chunks(saved_chunks[1], chunks)
         flash('Ваши правки сохранены!')
         return redirect(url_for('text.texts_list'))
+
+def listen(text_id):
+    # ToDo content not found error
+    text = Content.query.get(text_id)
+    files_dir = current_app.config['UPLOADED_AUDIOS_DEST']
+    return render_template(
+        'text/listening_page.html',
+        title=text.title,
+        content=text
+    )
+
+def serve_audio(text_id):
+    text = Content.query.get(text_id)
+    # ГОСТ Р 58281-2018
+    fdir, fname = os.path.split(text.filename)
+    # ToDo audio does not exist error
+    return send_from_directory(fdir, fname)
