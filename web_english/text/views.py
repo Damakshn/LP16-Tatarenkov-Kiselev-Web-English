@@ -100,6 +100,7 @@ def progress_bar(text_id):
     folder_name = create_name(title_text)[2]
     amount_audio_chunks = len(os.listdir(folder_name))
     amount_text_chunks = len(chunks)
+    # Добавить проверку на несуществование чанков (папки)
     progress = amount_text_chunks / amount_audio_chunks * 100
     data = {'progress': progress, 'status': text.status}
     return jsonify(data)
