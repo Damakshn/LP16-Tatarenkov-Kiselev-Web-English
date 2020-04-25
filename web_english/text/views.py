@@ -3,6 +3,7 @@ import os.path
 from flask import render_template, url_for, redirect, flash, request, jsonify
 from pydub import AudioSegment
 
+from config import Config
 from web_english import db
 from web_english.text.forms import TextForm, EditForm
 from web_english.text.maping_text import Recognizer, create_name, recognition_start
@@ -24,7 +25,7 @@ def create():
 def process_create():
     form = TextForm()
     if form.validate_on_submit():
-        filename = create_name(form.title_text.data)[0]
+        filename = f'{Config.UPLOADED_AUDIOS_DEST}/{create_name(form.title_text.data)}.mp3'
         audios.save(form.audio.data, name=filename)
         audio = AudioSegment.from_file_using_temporary_files(filename)
         duration = len(audio)
@@ -92,10 +93,10 @@ def progress_bar(text_id):
     text = Content.query.filter(Content.id == text_id).first()
     if text is None:
         data = {'status': 'The text is not found'}
-        return jsonify(data)
+        return jsonify(data), 404
     chunks = Chunk.query.filter(Chunk.content_id == text_id).all()
     title_text = text.title_text
-    folder_name = create_name(title_text)[2]
+    folder_name = f'{Config.UPLOADED_AUDIOS_DEST}/{create_name(title_text)}'
     amount_audio_chunks = len(os.listdir(folder_name))
     amount_text_chunks = len(chunks)
     progress = amount_text_chunks / amount_audio_chunks * 100

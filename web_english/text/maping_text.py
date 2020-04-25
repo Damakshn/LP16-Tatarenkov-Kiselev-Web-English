@@ -46,9 +46,9 @@ class Recognizer():
         self.title = title
 
     def chunk_audiofile(self, title):
-        folder_name = create_name(self.title)[2]
+        folder_name = f'{Config.UPLOADED_AUDIOS_DEST}/{create_name(self.title)}'
         os.mkdir(folder_name)
-        audiofile = create_name(self.title)[0]
+        audiofile = f'{folder_name}.mp3'
         audio = AudioSegment.from_mp3(audiofile)
         length_audio = len(audio)
         counter = 1
@@ -66,7 +66,7 @@ class Recognizer():
             if end >= length_audio:
                 end = length_audio
             chunk = audio[start:end]
-            chunk_name = f"{create_name(self.title)[1]}chunk{counter}.ogg"
+            chunk_name = f'{folder_name}/chunk{counter}.ogg'
             chunks.append(chunk_name)
             chunk.export(chunk_name, format='ogg')
             print(f"Processing {chunk_name}chunk{counter}. Start = {start} End = {end}")
@@ -184,8 +184,5 @@ def duplicate_word(segment_split_text, medium_word, number_duplicate):
 
 def create_name(title):
     filename_draft = re.sub(r'\s', r'_', title.lower())
-    filename_without_mp3 = re.sub(r'\W', r'', filename_draft)
-    folder_name = f'{Config.UPLOADED_AUDIOS_DEST}/{filename_without_mp3}'
-    filename_mp3 = f'{Config.UPLOADED_AUDIOS_DEST}/{filename_without_mp3}.mp3'
-    filename_ogg = f'{Config.UPLOADED_AUDIOS_DEST}/{filename_without_mp3}/{filename_without_mp3}'
-    return filename_mp3, filename_ogg, folder_name
+    filename = re.sub(r'\W', r'', filename_draft)
+    return filename
