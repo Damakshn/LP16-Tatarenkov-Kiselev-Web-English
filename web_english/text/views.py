@@ -1,6 +1,7 @@
+import os
 import os.path
 
-from flask import render_template, url_for, redirect, flash, request, jsonify
+from flask import render_template, url_for, redirect, flash, request, jsonify, send_from_directory
 from pydub import AudioSegment
 
 from config import Config
@@ -33,7 +34,7 @@ def process_create():
             title_text=form.title_text.data,
             text_en=form.text_en.data,
             text_ru=form.text_ru.data,
-            duration=duration
+            duration=duration,
         )
         db.session.add(text)
         db.session.commit()
@@ -102,3 +103,20 @@ def progress_bar(text_id):
     progress = amount_text_chunks / amount_audio_chunks * 100
     data = {'progress': progress, 'status': text.status}
     return jsonify(data)
+
+
+def listen(text_id):
+    # ToDo content not found error
+    text = Content.query.get(text_id)
+    return render_template(
+        'text/listening_page.html',
+        title=text.title_text,
+        content=text
+    )
+
+
+def serve_audio(text_id):
+    text = Content.query.get(text_id)
+    filename = f'{create_name(text.title_text)}.mp3'
+    print(filename)
+    return send_from_directory(Config.UPLOADED_AUDIOS_DEST, filename)
