@@ -1,10 +1,12 @@
 from datetime import timedelta
+import os
 import os.path
 
-from flask import render_template, url_for, redirect, flash, request, jsonify
+from flask import render_template, url_for, redirect, flash, request, jsonify, send_from_directory
 from pydub import AudioSegment
 from srt import Subtitle, compose
 
+from config import Config
 from web_english import db
 from web_english.text.forms import TextForm, EditForm
 from web_english.text.maping_text import Recognizer, create_name, recognition_start
@@ -26,7 +28,7 @@ def create():
 def process_create():
     form = TextForm()
     if form.validate_on_submit():
-        filename = create_name(form.title_text.data)[0]
+        filename = f'{Config.UPLOADED_AUDIOS_DEST}/{create_name(form.title_text.data)}.mp3'
         audios.save(form.audio.data, name=filename)
         audio = AudioSegment.from_file_using_temporary_files(filename)
         duration = len(audio)
@@ -34,7 +36,7 @@ def process_create():
             title_text=form.title_text.data,
             text_en=form.text_en.data,
             text_ru=form.text_ru.data,
-            duration=duration
+            duration=duration,
         )
         db.session.add(text)
         db.session.commit()
@@ -47,7 +49,7 @@ def process_create():
 def texts_list():
     title = 'Список текстов'
     texts = Content.query.all()
-    status = 'Done'
+    status = str(Content.DONE)
     return render_template(
                            'text/texts_list.html',
                            title=title,
@@ -62,13 +64,13 @@ def edit_text(text_id):
     title_text = text.title_text
     title_page = f'Правка {title_text}'
     chunks = Chunk.query.filter(Chunk.content_id == text.id).all()
-    chunks_resault = []
+    chunks_result = []
     for chunk in chunks:
         recognized_chunk = chunk.chunks_recognized.lower()
-        chunks_resault.append(recognized_chunk)
+        chunks_result.append(recognized_chunk)
     recognizer = Recognizer(title_text)
-    chunks_text = recognizer.list_chunks_text(text_id, chunks_resault)
-    merged_chunks = list(zip(chunks_text, chunks_resault))
+    chunks_text = recognizer.list_chunks_text(text_id, chunks_result)
+    merged_chunks = list(zip(chunks_text, chunks_result))
     return render_template('text/edit_text.html',
                            title_page=title_page,
                            merged_chunks=merged_chunks,
@@ -94,10 +96,10 @@ def progress_bar(text_id):
     text = Content.query.filter(Content.id == text_id).first()
     if text is None:
         data = {'status': 'The text is not found'}
-        return jsonify(data)
+        return jsonify(data), 404
     chunks = Chunk.query.filter(Chunk.content_id == text_id).all()
     title_text = text.title_text
-    folder_name = create_name(title_text)[2]
+    folder_name = f'{Config.UPLOADED_AUDIOS_DEST}/{create_name(title_text)}'
     amount_audio_chunks = len(os.listdir(folder_name))
     amount_text_chunks = len(chunks)
     # Добавить проверку на несуществование чанков (папки)
@@ -129,3 +131,20 @@ def create_srt(text_id):
         subtitles.append(subtitle)
         count += 1
     return jsonify(compose(subtitles))
+
+    
+def listen(text_id):
+    # ToDo content not found error
+    text = Content.query.get(text_id)
+    return render_template(
+        'text/listening_page.html',
+        title=text.title_text,
+        content=text
+    )
+
+
+def serve_audio(text_id):
+    text = Content.query.get(text_id)
+    filename = f'{create_name(text.title_text)}.mp3'
+    print(filename)
+    return send_from_directory(Config.UPLOADED_AUDIOS_DEST, filename)

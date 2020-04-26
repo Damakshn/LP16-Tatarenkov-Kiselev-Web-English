@@ -32,17 +32,18 @@
       let timerId = setInterval(function () {
         $.getJSON(url, function (result) {
           console.log(result);
-          if (result.status == "Processing") {
+          if (result.status == 2) {
             $(`.progress-bar.${dataId}`)
               .css("width", result.progress + "%")
               .text(Math.round(result.progress) + "%");
-          } else if (result.status == "Done") {
+          } else if (result.status == 3) {
             clearInterval(timerId);
             $(`.progress-bar.${dataId}`)
               .css("width", result.progress + "%")
               .text(Math.round(result.progress) + "%");
             setTimeout(anythingRemove, 2000, $(`.progress.${dataId}`));
           } else {
+            // Вывести Error
             clearInterval(timerId);
           }
         });

@@ -1,4 +1,3 @@
-import json
 import os
 import re
 
@@ -13,7 +12,7 @@ from web_english.models import Chunk, Content
 @celery.task
 def recognition_start(title):
     text = Content.query.filter(Content.title_text == title).first()
-    text.status = 'Processing'
+    text.status = Content.PROCESSING
     db.session.add(text)
     db.session.commit()
     # Та самая секунда, на которой находится диктор
@@ -25,16 +24,13 @@ def recognition_start(title):
         for chunk in chunks:
             chunk_result = recognizer.send_ya_speech_kit(chunk)
             chunk_maping = recognizer.maping_text(chunk_result, chunk_maping[3])[0]
-            if current_second == 0:
-                current_second += 2.5
-            else:
-                current_second += 3
+            current_second += Config.INTERVAL
             recognizer.save_chunk(chunk_maping, current_second)
-        text.status = 'Done'
+        text.status = Content.DONE
         db.session.add(text)
         db.session.commit()
     except Exception:
-        text.status = 'Error'
+        text.status = Content.ERROR
         db.session.add(text)
         db.session.commit()
         raise
@@ -46,9 +42,9 @@ class Recognizer():
         self.title = title
 
     def chunk_audiofile(self, title):
-        folder_name = create_name(self.title)[2]
+        folder_name = f'{Config.UPLOADED_AUDIOS_DEST}/{create_name(self.title)}'
         os.mkdir(folder_name)
-        audiofile = create_name(self.title)[0]
+        audiofile = f'{folder_name}.mp3'
         audio = AudioSegment.from_mp3(audiofile)
         length_audio = len(audio)
         counter = 1
@@ -66,7 +62,7 @@ class Recognizer():
             if end >= length_audio:
                 end = length_audio
             chunk = audio[start:end]
-            chunk_name = f"{create_name(self.title)[1]}chunk{counter}.ogg"
+            chunk_name = f'{folder_name}/chunk{counter}.ogg'
             chunks.append(chunk_name)
             chunk.export(chunk_name, format='ogg')
             print(f"Processing {chunk_name}chunk{counter}. Start = {start} End = {end}")
@@ -83,8 +79,7 @@ class Recognizer():
         url = "https://stt.api.cloud.yandex.net/speech/v1/stt:recognize"
         headers = {"Authorization": f"Api-Key {Config.API_KEY}"}
         response = requests.post(url, params=params, data=data, headers=headers)
-        decode_response = response.content.decode('UTF-8')
-        chunk = json.loads(decode_response)
+        chunk = response.json()
         if chunk.get("error_code") is None:
             return chunk.get("result")
         return False
@@ -95,6 +90,7 @@ class Recognizer():
         medium_word = None
         # Убираем из текста все знаки препинания и разбиваем по словам
         split_text = re.sub("[.,!?;:]", "", content.text_en).lower().split()
+        # 15  - это примерное кол-во слов, которое диктор может произнести за 3 секунды
         segment_split_text = split_text[word_number: word_number + 15]
         chunk_text = ' '.join(segment_split_text)
         # Разбиваем распознанный отрывок на слова и приводим к нижнему регистру
@@ -128,7 +124,7 @@ class Recognizer():
         chunk_maping = [chunk_result, content.id, medium_word, word_number]
         return chunk_maping, chunk_text
 
-    def list_chunks_text(self, text_id, chunks_resault):
+    def list_chunks_text(self, text_id, chunks_result):
         chunks_text = []
         words_number = [0]
         count = 0
@@ -136,8 +132,8 @@ class Recognizer():
         for chunk in chunks:
             word_number = chunk.word_number
             words_number.append(word_number)
-        for chunk_resault in chunks_resault:
-            chunk_text = self.maping_text(chunk_resault, words_number[count])[1]
+        for chunk_result in chunks_result:
+            chunk_text = self.maping_text(chunk_result, words_number[count])[1]
             chunks_text.append(chunk_text)
             count += 1
         return chunks_text
@@ -185,8 +181,5 @@ def duplicate_word(segment_split_text, medium_word, number_duplicate):
 
 def create_name(title):
     filename_draft = re.sub(r'\s', r'_', title.lower())
-    filename_without_mp3 = re.sub(r'\W', r'', filename_draft)
-    folder_name = f'{Config.UPLOADED_AUDIOS_DEST}/{filename_without_mp3}'
-    filename_mp3 = f'{Config.UPLOADED_AUDIOS_DEST}/{filename_without_mp3}.mp3'
-    filename_ogg = f'{Config.UPLOADED_AUDIOS_DEST}/{filename_without_mp3}/{filename_without_mp3}'
-    return filename_mp3, filename_ogg, folder_name
+    filename = re.sub(r'\W', r'', filename_draft)
+    return filename
