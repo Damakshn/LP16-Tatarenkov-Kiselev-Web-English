@@ -1,4 +1,3 @@
-from collections import namedtuple
 import os
 import re
 
@@ -41,7 +40,6 @@ class Recognizer():
 
     def __init__(self, title):
         self.title = title
-        self.Maping = namedtuple('Maping', 'chunk_result content_id medium_word word_number')
 
     def chunk_audiofile(self, title):
         folder_name = f'{Config.UPLOADED_AUDIOS_DEST}/{create_name(self.title)}'
@@ -122,12 +120,6 @@ class Recognizer():
         else:
             number_word_cut_split_text = duplicate_word(segment_split_text, medium_word, number_duplicate)
             word_number = number_word_cut_split_text + word_number
-
-        # chunk_map = self.Maping(chunk_result, content.id, medium_word, word_number)
-        # print(chunk_map)
-        # print(chunk_map.chunk_result)
-        # print(chunk_map.content_id)
-        # print(chunk_map.medium_word)
         chunk_maping = [chunk_result, content.id, medium_word, word_number]
         return chunk_maping, chunk_text
 
