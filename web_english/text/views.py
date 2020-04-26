@@ -47,7 +47,7 @@ def process_create():
 def texts_list():
     title = 'Список текстов'
     texts = Content.query.all()
-    status = 'Done'
+    status = str(Content.DONE)
     return render_template(
                            'text/texts_list.html',
                            title=title,
