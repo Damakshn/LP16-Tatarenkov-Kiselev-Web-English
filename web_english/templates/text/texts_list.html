@@ -43,6 +43,7 @@
               .text(Math.round(result.progress) + "%");
             setTimeout(anythingRemove, 2000, $(`.progress.${dataId}`));
           } else {
+            // Вывести Error
             clearInterval(timerId);
           }
         });

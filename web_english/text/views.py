@@ -62,13 +62,13 @@ def edit_text(text_id):
     title_text = text.title_text
     title_page = f'Правка {title_text}'
     chunks = Chunk.query.filter(Chunk.content_id == text.id).all()
-    chunks_resault = []
+    chunks_result = []
     for chunk in chunks:
         recognized_chunk = chunk.chunks_recognized.lower()
-        chunks_resault.append(recognized_chunk)
+        chunks_result.append(recognized_chunk)
     recognizer = Recognizer(title_text)
-    chunks_text = recognizer.list_chunks_text(text_id, chunks_resault)
-    merged_chunks = list(zip(chunks_text, chunks_resault))
+    chunks_text = recognizer.list_chunks_text(text_id, chunks_result)
+    merged_chunks = list(zip(chunks_text, chunks_result))
     return render_template('text/edit_text.html',
                            title_page=title_page,
                            merged_chunks=merged_chunks,

@@ -1,3 +1,4 @@
+from collections import namedtuple
 import json
 import os
 import re
@@ -25,10 +26,7 @@ def recognition_start(title):
         for chunk in chunks:
             chunk_result = recognizer.send_ya_speech_kit(chunk)
             chunk_maping = recognizer.maping_text(chunk_result, chunk_maping[3])[0]
-            if current_second == 0:
-                current_second += 2.5
-            else:
-                current_second += 3
+            current_second += Config.INTERVAL
             recognizer.save_chunk(chunk_maping, current_second)
         text.status = 'Done'
         db.session.add(text)
@@ -44,6 +42,7 @@ class Recognizer():
 
     def __init__(self, title):
         self.title = title
+        self.Maping = namedtuple('Maping', 'chunk_result content_id medium_word word_number')
 
     def chunk_audiofile(self, title):
         folder_name = f'{Config.UPLOADED_AUDIOS_DEST}/{create_name(self.title)}'
@@ -94,6 +93,7 @@ class Recognizer():
         medium_word = None
         # Убираем из текста все знаки препинания и разбиваем по словам
         split_text = re.sub("[.,!?;:]", "", content.text_en).lower().split()
+        # 15  - это примерное кол-во слов, которое диктор может произнести за 3 секунды
         segment_split_text = split_text[word_number: word_number + 15]
         chunk_text = ' '.join(segment_split_text)
         # Разбиваем распознанный отрывок на слова и приводим к нижнему регистру
@@ -124,10 +124,16 @@ class Recognizer():
         else:
             number_word_cut_split_text = duplicate_word(segment_split_text, medium_word, number_duplicate)
             word_number = number_word_cut_split_text + word_number
+
+        # chunk_map = self.Maping(chunk_result, content.id, medium_word, word_number)
+        # print(chunk_map)
+        # print(chunk_map.chunk_result)
+        # print(chunk_map.content_id)
+        # print(chunk_map.medium_word)
         chunk_maping = [chunk_result, content.id, medium_word, word_number]
         return chunk_maping, chunk_text
 
-    def list_chunks_text(self, text_id, chunks_resault):
+    def list_chunks_text(self, text_id, chunks_result):
         chunks_text = []
         words_number = [0]
         count = 0
@@ -135,8 +141,8 @@ class Recognizer():
         for chunk in chunks:
             word_number = chunk.word_number
             words_number.append(word_number)
-        for chunk_resault in chunks_resault:
-            chunk_text = self.maping_text(chunk_resault, words_number[count])[1]
+        for chunk_result in chunks_result:
+            chunk_text = self.maping_text(chunk_result, words_number[count])[1]
             chunks_text.append(chunk_text)
             count += 1
         return chunks_text
