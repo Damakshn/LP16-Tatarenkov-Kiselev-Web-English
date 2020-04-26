@@ -1,9 +1,13 @@
 import os
-from flask import current_app, flash, redirect, render_template, request, send_from_directory, url_for
+import os.path
+
+from flask import render_template, url_for, redirect, flash, request, jsonify, send_from_directory
 from pydub import AudioSegment
+
+from config import Config
 from web_english import db
 from web_english.text.forms import TextForm, EditForm
-from web_english.text.maping_text import Recognizer, recognition_start, create_filename
+from web_english.text.maping_text import Recognizer, create_name, recognition_start
 from web_english.models import Content, Chunk
 from web_english import audios
 
@@ -18,10 +22,11 @@ def create():
         enctype="multipart/form-data"
     )
 
+
 def process_create():
     form = TextForm()
     if form.validate_on_submit():
-        filename = create_filename(form.title_text.data)[0]
+        filename = f'{Config.UPLOADED_AUDIOS_DEST}/{create_name(form.title_text.data)}.mp3'
         audios.save(form.audio.data, name=filename)
         audio = AudioSegment.from_file_using_temporary_files(filename)
         duration = len(audio)
@@ -30,11 +35,9 @@ def process_create():
             text_en=form.text_en.data,
             text_ru=form.text_ru.data,
             duration=duration,
-            filename=filename
         )
         db.session.add(text)
         db.session.commit()
-        #  Используем Celery
         recognition_start.delay(form.title_text.data)
         flash('Ваш текст сохранен! Обработка текста может занять некоторое время.')
         return redirect(url_for('text.texts_list'))
@@ -44,10 +47,12 @@ def process_create():
 def texts_list():
     title = 'Список текстов'
     texts = Content.query.all()
+    status = str(Content.DONE)
     return render_template(
                            'text/texts_list.html',
                            title=title,
-                           texts=texts
+                           texts=texts,
+                           status=status
                            )
 
 
@@ -57,13 +62,13 @@ def edit_text(text_id):
     title_text = text.title_text
     title_page = f'Правка {title_text}'
     chunks = Chunk.query.filter(Chunk.content_id == text.id).all()
-    chunks_resault = []
+    chunks_result = []
     for chunk in chunks:
         recognized_chunk = chunk.chunks_recognized.lower()
-        chunks_resault.append(recognized_chunk)
+        chunks_result.append(recognized_chunk)
     recognizer = Recognizer(title_text)
-    chunks_text = recognizer.maping_text(chunks_resault, title=title_text)
-    merged_chunks = list(zip(chunks_text[0], chunks_resault))
+    chunks_text = recognizer.list_chunks_text(text_id, chunks_result)
+    merged_chunks = list(zip(chunks_text, chunks_result))
     return render_template('text/edit_text.html',
                            title_page=title_page,
                            merged_chunks=merged_chunks,
@@ -80,24 +85,38 @@ def process_edit_text():
     form = EditForm()
     recognizer = Recognizer(title_text)
     if form.validate_on_submit():
-        saved_chunks = recognizer.maping_text(edited_chunks, title=title_text)
-        recognizer.save_edit_chunks(saved_chunks[1], chunks)
+        recognizer.edit_maping(edited_chunks, chunks)
         flash('Ваши правки сохранены!')
         return redirect(url_for('text.texts_list'))
+
+
+def progress_bar(text_id):
+    text = Content.query.filter(Content.id == text_id).first()
+    if text is None:
+        data = {'status': 'The text is not found'}
+        return jsonify(data), 404
+    chunks = Chunk.query.filter(Chunk.content_id == text_id).all()
+    title_text = text.title_text
+    folder_name = f'{Config.UPLOADED_AUDIOS_DEST}/{create_name(title_text)}'
+    amount_audio_chunks = len(os.listdir(folder_name))
+    amount_text_chunks = len(chunks)
+    progress = amount_text_chunks / amount_audio_chunks * 100
+    data = {'progress': progress, 'status': text.status}
+    return jsonify(data)
+
 
 def listen(text_id):
     # ToDo content not found error
     text = Content.query.get(text_id)
-    files_dir = current_app.config['UPLOADED_AUDIOS_DEST']
     return render_template(
         'text/listening_page.html',
-        title=text.title,
+        title=text.title_text,
         content=text
     )
 
+
 def serve_audio(text_id):
     text = Content.query.get(text_id)
-    # ГОСТ Р 58281-2018
-    fdir, fname = os.path.split(text.filename)
-    # ToDo audio does not exist error
-    return send_from_directory(fdir, fname)
+    filename = f'{create_name(text.title_text)}.mp3'
+    print(filename)
+    return send_from_directory(Config.UPLOADED_AUDIOS_DEST, filename)

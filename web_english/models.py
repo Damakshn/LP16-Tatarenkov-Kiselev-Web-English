@@ -67,13 +67,18 @@ class User(UserMixin, db.Model, ServiceMixin):
 
 
 class Content(db.Model, ServiceMixin):
+    QUEUED = 1
+    PROCESSING = 2
+    DONE = 3
+    ERROR = 0
+
     id = db.Column(db.Integer, primary_key=True)
     title_text = db.Column(db.String, unique=True, nullable=False)
     text_en = db.Column(db.Text, unique=True, nullable=False)
     text_ru = db.Column(db.Text, unique=True, nullable=False)
     duration = db.Column(db.Integer)
+    status = db.Column(db.String, default=QUEUED)
     chunks = db.relationship('Chunk', backref='content', lazy='dynamic')
-    filename = db.Column(db.String)
 
     def __repr__(self):
         return f"<Content {self.title_text}>"
