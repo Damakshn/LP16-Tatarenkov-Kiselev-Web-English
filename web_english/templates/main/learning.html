@@ -1,14 +1,21 @@
 {% extends "base.html" %}
 {% block content %}
 <h1><p>{{ title }}</p></h1>
-    <span id="a1" class="text">That has been hitting me on the head with his umbrella</span><span id="a2" class="text">AT 1st i couldn't stay</span><span id="a3" class="text">Powys avirgin appearance wears a grey suit</span><span id="a4" class="text">Umbrella exactly 5 years today</span></br><span id="a5" class="text">Now What</span>
+    <div class="container bg-light ">
+        <span id="a1" class="text">That has been hitting me on the head with his umbrella</span><span id="a2" class="text"> AT 1st i couldn't stay</span><span id="a3" class="text"> Powys avirgin appearance wears a grey suit Umbr.</span></br><span id="a4" class="text"> Umbrella exactly 5 years today</span><span id="a5" class="text"> Now What</span>
+    </div>
 
 
 {% endblock %}
 {% block js %}
-<script src="{{ url_for('static', filename='jquery-3.5.0.js') }}"></script>
 <style>
+    .container {
+        min-width: 900px;
+        max-width: 900px;
+    }
     .text {
+        font-size: 17px;
+        font-family: 'Times New Roman', Times, serif;
         position: relative;
         overflow: hidden;
     }
@@ -27,7 +34,12 @@
         width: 100%;
     }
 </style>
+<script src="{{ url_for('static', filename='jquery-3.5.0.js') }}"></script>
 <script>
+    width = screen.width;
+    clientWidth = document.body.clientWidth;
+    console.log(width);
+    console.log(clientWidth);
     function addActive1() {
         let item = document.querySelector("#a1")
         item.classList.add("active");
@@ -54,69 +66,9 @@
     }
     setTimeout(addActive5, 15000);
     
+    let canvas = document.createElement('canvas')
+    let ctx = canvas.getContext('2d')
+    ctx.font = '17px Times New Roman'
+    console.log(ctx.measureText("That has been hitting me on the head with his umbrella AT 1st i couldn't stay Powys avirgin appearance wears a grey suit Umbr.").width)
 </script>
 {% endblock %}
-
-
-
-
-
-
-
-<!-- // let progress = 0
-// setInterval(function() {
-//     $('.text').css('width', progress + '%');
-//     progress++
-// }, 500) -->
-<!-- <style>
-p {
-    text-decoration: none;
-    position: relative;
-}
-.font-weight-normal p::before {
-    content: '';
-    bottom: 0;
-    left: 0;
-    position: absolute;
-    width: 0%;
-    height: 2px;
-    background-color: #000;
-    transition: 3s;
-}
-.font-weight-normal p:hover:before {
-    width: 100%;
-}
-        </style> -->
-
-        <!-- <canvas id="myCanvas" width="0" height="0" style="border:1px solid #000;"></canvas> -->
-        <!-- let pro = 0;
-        setInterval(function(){
-            $('#myCanvas').css("width", pro);
-            pro = pro + 1;
-        }, 1)
-        
-        let canvas = document.createElement('canvas')
-        let ctx = canvas.getContext('2d')
-        ctx.font = '16px Trattatello'
-        console.log(ctx.font)
-        console.log(ctx.measureText("there's a man in the habit of hitting me on the head with an umbrella").width) -->
-<!-- 
-        .text {
-            position: relative;
-            padding-bottom: 5px;
-        }
-        .text:before {
-            position: absolute;
-            height: 1px;
-            width: 100%;
-            left: 0;
-            background: red;
-            content: '';
-            transition: left 3s linear;
-            bottom: 5px;
-        }
-        /* .text:before {
-            left: 0;
-            
-        }
-        */ -->
