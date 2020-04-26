@@ -90,6 +90,7 @@ class Recognizer():
         return False
 
     def maping_text(self, chunk_result, word_number):
+        print(chunk_result)
         content = Content.query.filter(Content.title_text == self.title).first()
         medium_word = None
         # Убираем из текста все знаки препинания и разбиваем по словам
