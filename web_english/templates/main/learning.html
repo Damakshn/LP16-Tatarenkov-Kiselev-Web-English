@@ -1,74 +1,174 @@
-{% extends "base.html" %}
-{% block content %}
-<h1><p>{{ title }}</p></h1>
-    <div class="container bg-light ">
-        <span id="a1" class="text">That has been hitting me on the head with his umbrella</span><span id="a2" class="text"> AT 1st i couldn't stay</span><span id="a3" class="text"> Powys avirgin appearance wears a grey suit Umbr.</span></br><span id="a4" class="text"> Umbrella exactly 5 years today</span><span id="a5" class="text"> Now What</span>
-    </div>
+{% extends "base.html" %} {% block content %}
+<h1><p>{{ text.title_text }}</p></h1>
+<div id="text_en" class="container text" data-id="{{ text.id }}"></div>
+<div id="text_en_sentence" class="container text">
+  <span class="text-sentence">
+    The valley known as Sleepy Hollow hides from the world in the high hills of
+    New York state.
+  </span>
+</div>
+<div id="text_ru_sentence" class="container text">
+  <span class="text-sentence">
+    Долина, известная как Сонная Лощина, скрывается от мира на высоких холмах
+    штата Нью-Йорк.
+  </span>
+</div>
+<div class="buttons">
+  <button id="back">Back</button>
+  <button id="play">Play</button>
+  <button id="pause">Pause</button>
+  <button id="stop">Stop</button>
+  <button id="speed_up">Faster</button>
+  <button id="slow_down">Slower</button>
+  <button id="normal_speed">Normal</button>
+</div>
 
-
-{% endblock %}
-{% block js %}
-<style>
-    .container {
-        min-width: 900px;
-        max-width: 900px;
-    }
-    .text {
-        font-size: 17px;
-        font-family: 'Times New Roman', Times, serif;
-        position: relative;
-        overflow: hidden;
-    }
-    .text:before {
-        position: absolute;
-        height: 1px;
-        width: 0%;
-        left: 0;
-        background: black;
-        content: '';
-        transition: width 3s linear;
-        bottom: -1px;
-        
-    }
-    .text.active:before {
-        width: 100%;
-    }
-</style>
+{% endblock %} {% block js %}
 <script src="{{ url_for('static', filename='jquery-3.5.0.js') }}"></script>
 <script>
-    width = screen.width;
-    clientWidth = document.body.clientWidth;
-    console.log(width);
-    console.log(clientWidth);
-    function addActive1() {
-        let item = document.querySelector("#a1")
-        item.classList.add("active");
-    }
-    setTimeout(addActive1, 3000);
-    function addActive2() {
-        let item = document.querySelector("#a2")
-        item.classList.add("active");
-    }
-    setTimeout(addActive2, 6000);
-    function addActive3() {
-        let item = document.querySelector("#a3")
-        item.classList.add("active");
-    }
-    setTimeout(addActive3, 9000);
-    function addActive4() {
-        let item = document.querySelector("#a4")
-        item.classList.add("active");
-    }
-    setTimeout(addActive4, 12000);
-    function addActive5() {
-        let item = document.querySelector("#a5")
-        item.classList.add("active");
-    }
-    setTimeout(addActive5, 15000);
-    
-    let canvas = document.createElement('canvas')
-    let ctx = canvas.getContext('2d')
-    ctx.font = '17px Times New Roman'
-    console.log(ctx.measureText("That has been hitting me on the head with his umbrella AT 1st i couldn't stay Powys avirgin appearance wears a grey suit Umbr.").width)
+  $(document).ready(function () {
+    let dataId = $("#text_en").attr("data-id");
+    let url = "send_chunks/" + dataId;
+    (function (url) {
+      $.getJSON(url, function (result) {
+        for (let i = 0; i < result.length; i++) {
+          text_en.insertAdjacentHTML(
+            "beforeend",
+            `<nobr id=\"a${i}\" class=\"chunk\"> ${result[i]}</nobr>`
+          );
+        }
+      });
+    })(url);
+
+    let audio = new Audio("{{ url_for('main.serve_audio', text_id=text.id) }}"),
+      pause = false,
+      stop = false,
+      timePassed,
+      second;
+    const MILLISECONDS_PER_SECOND = 1000;
+
+    playFromBeginning = function () {
+      pause = false;
+      stop = false;
+      audio.currentTime = 0;
+      audio.play();
+      $(audio).bind("timeupdate", function () {
+        second = parseFloat(audio.currentTime);
+        console.log(second);
+        let chunksLength = $(".chunk").length;
+        for (let i = 0; i < chunksLength; i++) {
+          if (second >= 3 * i) {
+            let item = document.querySelector(`#a${i}`);
+            item.classList.add("active");
+          }
+        }
+      });
+      return;
+    };
+
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState !== "visible") {
+        pause = true;
+        audio.pause();
+      }
+    });
+
+    resumePlaying = function () {
+      if (stop) {
+        return;
+      }
+      pause = false;
+      audio.play();
+      return;
+    };
+
+    set_pause = function () {
+      if (stop) {
+        return;
+      }
+      pause = true;
+      audio.pause();
+      return;
+    };
+
+    stop_playing = function () {
+      stop = true;
+      pause = false;
+      audio.pause();
+      audio.currentTime = 0;
+      return;
+    };
+
+    playButtonHandler = function () {
+      if (!pause) {
+        playFromBeginning();
+      } else {
+        resumePlaying();
+      }
+      return;
+    };
+
+    pauseButtonHandler = function () {
+      if (!pause) {
+        set_pause();
+      } else {
+        resumePlaying();
+      }
+      return;
+    };
+
+    stopButtonHandler = function () {
+      stop_playing();
+      return;
+    };
+
+    document
+      .getElementById("play")
+      .addEventListener("click", playButtonHandler);
+
+    document
+      .getElementById("pause")
+      .addEventListener("click", pauseButtonHandler);
+
+    document
+      .getElementById("stop")
+      .addEventListener("click", stopButtonHandler);
+  });
 </script>
+<style>
+  .container.text {
+    background: #c5cbcc;
+    min-width: 900px;
+    max-width: 900px;
+    max-height: 350px;
+    overflow: auto;
+    margin-bottom: 20px;
+  }
+  #text_en_sentence {
+    font-size: 1.5rem;
+  }
+  #text_ru_sentence {
+    font-size: 1.5rem;
+  }
+  .chunk {
+    font-size: 1.1rem;
+    font-family: "Times New Roman", Times, serif;
+    position: relative;
+    overflow: hidden;
+  }
+  .chunk:before {
+    position: absolute;
+    height: 1px;
+    width: 0%;
+    left: 0;
+    background: black;
+    content: "";
+    transition: width 3s linear;
+    -webkit-transition: width 3s linear;
+    bottom: -1px;
+  }
+  .chunk.active:before {
+    width: 100%;
+  }
+</style>
 {% endblock %}

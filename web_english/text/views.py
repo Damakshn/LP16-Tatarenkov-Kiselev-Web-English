@@ -132,7 +132,7 @@ def create_srt(text_id):
         count += 1
     return jsonify(compose(subtitles))
 
-    
+
 def listen(text_id):
     # ToDo content not found error
     text = Content.query.get(text_id)
