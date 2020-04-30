@@ -2,7 +2,7 @@ from flask import render_template, url_for, flash, redirect
 from flask_login import login_user, logout_user
 from web_english.auth.forms import LoginForm, RegisterForm, ResetPasswordRequestForm, ResetPasswordForm
 from web_english.auth.email import send_password_reset_email, send_verification_email
-from web_english.models import User
+from web_english.models import User, Role
 from web_english import db
 
 
@@ -28,7 +28,7 @@ def process_login():
                 return redirect(url_for("main.index"))
             flash("Вы не подтвердили почту")
             return redirect(url_for("main.index"))
-    flash("Что-то пошло не так")
+    flash("Неправильное имя пользователя и/или пароль. Попробуйте ещё раз.")
     return redirect(url_for("auth.login"))
 
 
@@ -51,6 +51,7 @@ def process_register():
         error = list(form.errors.values())
         flash(error[0][0])
         return redirect(url_for("auth.register"))
+    
     new_user = User(
         username=form.username.data,
         password=form.password.data,
@@ -58,6 +59,10 @@ def process_register():
         first_name=form.first_name.data,
         last_name=form.last_name.data,
     )
+    default_user_role = Role.query.filter_by(name="student").one()
+    print(default_user_role)
+    print(dir(new_user))
+    new_user.roles.append(default_user_role)
     db.session.add(new_user)
     db.session.commit()
     send_verification_email(new_user)

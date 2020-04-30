@@ -40,7 +40,7 @@ class User(UserMixin, db.Model, ServiceMixin):
     first_name = db.Column(db.String(64))
     last_name = db.Column(db.String(64))
     is_active = db.Column(db.Boolean, nullable=False, default=True)
-    role = db.Column(db.Integer, nullable=False, default=USER_ROLE_STUDENT)
+    roles = db.relationship('Role', secondary='User_roles')
 
     def set_password(self, password):
         self.password = generate_password_hash(password)
@@ -66,6 +66,22 @@ class User(UserMixin, db.Model, ServiceMixin):
         return cls.query.get(id)
 
 
+class Role(db.Model):
+    __tablename__ = "Roles"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True, nullable=False)
+
+    def __repr__(self):
+        return f"<Role {self.name}>"
+
+
+class UserRoles(db.Model):
+    __tablename__ = "User_roles"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer(), db.ForeignKey('Users.id', ondelete='CASCADE'))
+    role_id = db.Column(db.Integer(), db.ForeignKey('Roles.id', ondelete='CASCADE'))
+
+
 class Content(db.Model, ServiceMixin):
     QUEUED = 1
     PROCESSING = 2
@@ -79,6 +95,21 @@ class Content(db.Model, ServiceMixin):
     duration = db.Column(db.Integer)
     status = db.Column(db.Integer, default=QUEUED)
     chunks = db.relationship('Chunk', backref='content', lazy='dynamic')
+
+    @property
+    def is_ready(self):
+        return self.status == Content.DONE
+    
+    @property
+    def duration_for_humans(self):
+        """
+        Длительность звучания текста в формате мм:сс
+        """
+        MILLISECONDS_IN_SECOND = 1000
+        SECONDS_PER_MINUTE = 60
+        seconds = self.duration // MILLISECONDS_IN_SECOND
+        minutes = seconds // SECONDS_PER_MINUTE
+        return f"{str(minutes).zfill(2)}:{str(seconds % SECONDS_PER_MINUTE).zfill(2)}"
 
     def __repr__(self):
         return f"<Content {self.title_text}>"

@@ -1,10 +1,10 @@
 import os
 import os.path
-
 from flask import render_template, url_for, redirect, flash, request, jsonify, send_from_directory
+from flask_login import login_required
 from pydub import AudioSegment
-
 from config import Config
+from web_english.auth.helpers import roles_required
 from web_english import db
 from web_english.text.forms import TextForm, EditForm
 from web_english.text.maping_text import Recognizer, create_name, recognition_start
@@ -12,6 +12,8 @@ from web_english.models import Content, Chunk
 from web_english import audios
 
 
+@login_required
+@roles_required('admin', 'contentmaker')
 def create():
     form = TextForm()
     return render_template(
@@ -23,6 +25,8 @@ def create():
     )
 
 
+@login_required
+@roles_required('admin', 'contentmaker')
 def process_create():
     form = TextForm()
     if form.validate_on_submit():
@@ -44,18 +48,31 @@ def process_create():
     return redirect(url_for('text.create'))
 
 
+@login_required
+@roles_required('admin', 'contentmaker')
 def texts_list():
     title = 'Список текстов'
     texts = Content.query.all()
-    status = str(Content.DONE)
     return render_template(
-                           'text/texts_list.html',
-                           title=title,
-                           texts=texts,
-                           status=status
-                           )
+        'text/texts_list.html',
+        title=title,
+        texts=texts
+    )
 
 
+@login_required
+def text_list_for_student():
+    title = 'Тексты для изучения'
+    texts = Content.query.filter_by(status=Content.DONE).all()
+    return render_template(
+        'text/texts_for_listening.html',
+        title=title,
+        texts=texts
+    )
+
+
+@login_required
+@roles_required('admin', 'contentmaker')
 def edit_text(text_id):
     form = EditForm()
     text = Content.query.filter(Content.id == text_id).first()
@@ -76,6 +93,8 @@ def edit_text(text_id):
                            form_action=url_for('text.process_edit_text', id=text.id))
 
 
+@login_required
+@roles_required('admin', 'contentmaker')
 def process_edit_text():
     text_id = request.args.get('id')
     text = Content.query.filter(Content.id == text_id).first()
@@ -90,6 +109,7 @@ def process_edit_text():
         return redirect(url_for('text.texts_list'))
 
 
+@login_required
 def progress_bar(text_id):
     text = Content.query.filter(Content.id == text_id).first()
     if text is None:
@@ -105,6 +125,7 @@ def progress_bar(text_id):
     return jsonify(data)
 
 
+@login_required
 def listen(text_id):
     # ToDo content not found error
     text = Content.query.get(text_id)
@@ -115,8 +136,8 @@ def listen(text_id):
     )
 
 
+@login_required
 def serve_audio(text_id):
     text = Content.query.get(text_id)
     filename = f'{create_name(text.title_text)}.mp3'
-    print(filename)
     return send_from_directory(Config.UPLOADED_AUDIOS_DEST, filename)

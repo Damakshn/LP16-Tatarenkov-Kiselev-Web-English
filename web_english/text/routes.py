@@ -10,3 +10,4 @@ bp.add_url_rule("/process_edit_text", "process_edit_text",
 bp.add_url_rule("/progress/<text_id>", "progress", views.progress_bar)
 bp.add_url_rule('/listen/<int:text_id>', "listen", views.listen)
 bp.add_url_rule('/audio/<int:text_id>', "serve_audio", views.serve_audio)
+bp.add_url_rule("/learning", "learning_list", views.text_list_for_student)
