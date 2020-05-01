@@ -1,8 +1,10 @@
 import os
 import os.path
-from flask import render_template, url_for, redirect, flash, request, jsonify, send_from_directory
+
+from flask import render_template, url_for, redirect, flash, request, jsonify
 from flask_login import login_required
 from pydub import AudioSegment
+
 from config import Config
 from web_english.auth.helpers import roles_required
 from web_english import db
@@ -61,17 +63,6 @@ def texts_list():
 
 
 @login_required
-def text_list_for_student():
-    title = 'Тексты для изучения'
-    texts = Content.query.filter_by(status=Content.DONE).all()
-    return render_template(
-        'text/texts_for_listening.html',
-        title=title,
-        texts=texts
-    )
-
-
-@login_required
 @roles_required('admin', 'contentmaker')
 def edit_text(text_id):
     form = EditForm()
@@ -120,24 +111,7 @@ def progress_bar(text_id):
     folder_name = f'{Config.UPLOADED_AUDIOS_DEST}/{create_name(title_text)}'
     amount_audio_chunks = len(os.listdir(folder_name))
     amount_text_chunks = len(chunks)
+    # Добавить проверку на несуществование чанков (папки)
     progress = amount_text_chunks / amount_audio_chunks * 100
     data = {'progress': progress, 'status': text.status}
     return jsonify(data)
-
-
-@login_required
-def listen(text_id):
-    # ToDo content not found error
-    text = Content.query.get(text_id)
-    return render_template(
-        'text/listening_page.html',
-        title=text.title_text,
-        content=text
-    )
-
-
-@login_required
-def serve_audio(text_id):
-    text = Content.query.get(text_id)
-    filename = f'{create_name(text.title_text)}.mp3'
-    return send_from_directory(Config.UPLOADED_AUDIOS_DEST, filename)

@@ -88,7 +88,7 @@ class Recognizer():
         content = Content.query.filter(Content.title_text == self.title).first()
         medium_word = None
         # Убираем из текста все знаки препинания и разбиваем по словам
-        split_text = re.sub("[.,!?;:]", "", content.text_en).lower().split()
+        split_text = re.sub(r"[.,!?;:]", r"", content.text_en).lower().split()
         # 15  - это примерное кол-во слов, которое диктор может произнести за 3 секунды
         segment_split_text = split_text[word_number: word_number + 15]
         chunk_text = ' '.join(segment_split_text)

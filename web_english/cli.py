@@ -12,7 +12,7 @@ def register(app):
         Создаёт три базовые роли пользователей - админ, ученик и контентмейкер
         если их ещё нет.
         """
-        existing_roles = [lower(role.name) for role in Role.query.all()]
+        existing_roles = [role.name.lower() for role in Role.query.all()]
         basic_roles = ['admin', 'student', 'contentmaker']
         for role in basic_roles:
             if role not in existing_roles:
@@ -20,7 +20,7 @@ def register(app):
                 new_role = Role(name=role)
                 db.session.add(new_role)
                 db.session.commit()
-    
+
     @app.cli.command("create-admin")
     def create_admin():
         admin_role = Role.query.filter_by(name='admin').one_or_none()
@@ -43,15 +43,15 @@ def register(app):
         if User.query.filter(User.email == email).count():
             print("Этот e-mail уже используется.")
             sys.exit(0)
-        
+
         new_user = User(
             username=username,
             password=password,
-            email=email
-        )
+            email=email,
+            is_email_confirmed=True
+            )
 
         new_user.roles.append(admin_role)
         db.session.add(new_user)
         db.session.commit()
         print(f"Создан новый пользователь {new_user.username} id={new_user.id}")
-        

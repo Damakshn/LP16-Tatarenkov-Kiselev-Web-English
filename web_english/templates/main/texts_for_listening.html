@@ -11,7 +11,7 @@
     <tbody>
         {% for text in texts %}
         <tr>
-            <td><a href="{{ url_for('text.listen', text_id=text.id) }}">{{ text.title_text }}</a></td>
+            <td><a href="{{ url_for('main.learning', text_id=text.id) }}">{{ text.title_text }}</a></td>
             <td>{{ text.duration_for_humans }}</td>
         </tr>
         {% endfor %}
