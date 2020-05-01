@@ -3,13 +3,12 @@ from flask import Flask
 from flask_login import LoginManager
 from flask_mail import Mail
 from flask_migrate import Migrate
-from flask_sqlalchemy import SQLAlchemy
 from flask_uploads import configure_uploads, UploadSet, AUDIO
+from web_english.db import db
 from web_english import error_handlers
 
 from config import Config
 
-db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
 audios = UploadSet('audios', AUDIO)

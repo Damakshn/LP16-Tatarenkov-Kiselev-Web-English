@@ -25,10 +25,6 @@ class ServiceMixin:
 
 
 class User(UserMixin, db.Model, ServiceMixin):
-    USER_ROLE_ADMIN = 0
-    USER_ROLE_STUDENT = 1
-    USER_ROLE_CONTENTMAKER = 2
-
     __tablename__ = "Users"
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True,
