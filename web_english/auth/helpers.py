@@ -15,7 +15,6 @@ def roles_required(*roles):
         @wraps(view_function)
         def wrapper(*args, **kwargs):
             can_access = False
-            print(current_user.roles)
             for role in [role.name for role in current_user.roles]:
                 if role in roles:
                     can_access = True

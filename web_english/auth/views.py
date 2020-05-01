@@ -60,8 +60,6 @@ def process_register():
         last_name=form.last_name.data,
     )
     default_user_role = Role.query.filter_by(name="student").one()
-    print(default_user_role)
-    print(dir(new_user))
     new_user.roles.append(default_user_role)
     db.session.add(new_user)
     db.session.commit()

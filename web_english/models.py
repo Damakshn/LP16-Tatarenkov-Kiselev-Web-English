@@ -105,7 +105,9 @@ class Content(db.Model, ServiceMixin):
         SECONDS_PER_MINUTE = 60
         seconds = self.duration // MILLISECONDS_IN_SECOND
         minutes = seconds // SECONDS_PER_MINUTE
-        return f"{str(minutes).zfill(2)}:{str(seconds % SECONDS_PER_MINUTE).zfill(2)}"
+        formatted_minutes = str(minutes).zfill(2)
+        formatted_seconds = str(seconds % SECONDS_PER_MINUTE).zfill(2)
+        return f"{formatted_minutes}:{formatted_seconds}"
 
     def __repr__(self):
         return f"<Content {self.title_text}>"
