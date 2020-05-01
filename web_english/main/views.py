@@ -32,14 +32,23 @@ def send_chunks(text_id):
         split_chunk = split_text[word_number_start:word_number_end]
         join_chunk = " ".join(split_chunk)
         chunks_for_sending.append(join_chunk)
-    sentences_en = re.split(r"(?<=\w[.!?;]) ", text.text_en)
-    sentences_ru = re.split(r"(?<=\w[.!?;]) ", text.text_ru)
+    sentences_en = split_text_by_sentences(text.text_en)
+    sentences_ru = split_text_by_sentences(text.text_ru)
     sending = {
         "chunks_for_sending": chunks_for_sending,
         "sentences_en": sentences_en,
         "sentences_ru": sentences_ru,
     }
     return jsonify(sending)
+
+
+def split_text_by_sentences(text):
+    punctuation = [".", "!", "?", ";"]
+    for i in punctuation:
+        changed_text = text.replace(i, f"{i}|")
+        text = changed_text
+    split_text_by_sentences = text.split("|")
+    return split_text_by_sentences
 
 
 @login_required
