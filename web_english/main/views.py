@@ -1,6 +1,7 @@
 import re
 
 from flask import render_template, jsonify, send_from_directory
+from flask_login import login_required
 
 from config import Config
 from web_english.models import Content, Chunk
@@ -11,11 +12,13 @@ def index():
     return render_template("main/index.html")
 
 
+@login_required
 def learning(text_id):
     text = Content.query.filter(Content.id == text_id).first()
     return render_template("main/learning.html", text=text)
 
 
+@login_required
 def send_chunks(text_id):
     text = Content.query.filter(Content.id == text_id).first()
     chunks = Chunk.query.filter(Chunk.content_id == text_id).all()
@@ -39,7 +42,19 @@ def send_chunks(text_id):
     return jsonify(sending)
 
 
+@login_required
 def serve_audio(text_id):
     text = Content.query.get(text_id)
     filename = f"{create_name(text.title_text)}.mp3"
     return send_from_directory(Config.UPLOADED_AUDIOS_DEST, filename)
+
+
+@login_required
+def text_list_for_student():
+    title = 'Тексты для изучения'
+    texts = Content.query.filter_by(status=Content.DONE).all()
+    return render_template(
+        'main/texts_for_listening.html',
+        title=title,
+        texts=texts
+    )

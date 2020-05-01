@@ -1,12 +1,12 @@
-from datetime import timedelta
 import os
 import os.path
 
-from flask import render_template, url_for, redirect, flash, request, jsonify, send_from_directory
+from flask import render_template, url_for, redirect, flash, request, jsonify
+from flask_login import login_required
 from pydub import AudioSegment
-from srt import Subtitle, compose
 
 from config import Config
+from web_english.auth.helpers import roles_required
 from web_english import db
 from web_english.text.forms import TextForm, EditForm
 from web_english.text.maping_text import Recognizer, create_name, recognition_start
@@ -14,6 +14,8 @@ from web_english.models import Content, Chunk
 from web_english import audios
 
 
+@login_required
+@roles_required('admin', 'contentmaker')
 def create():
     form = TextForm()
     return render_template(
@@ -25,6 +27,8 @@ def create():
     )
 
 
+@login_required
+@roles_required('admin', 'contentmaker')
 def process_create():
     form = TextForm()
     if form.validate_on_submit():
@@ -46,18 +50,20 @@ def process_create():
     return redirect(url_for('text.create'))
 
 
+@login_required
+@roles_required('admin', 'contentmaker')
 def texts_list():
     title = 'Список текстов'
     texts = Content.query.all()
-    status = str(Content.DONE)
     return render_template(
-                           'text/texts_list.html',
-                           title=title,
-                           texts=texts,
-                           status=status
-                           )
+        'text/texts_list.html',
+        title=title,
+        texts=texts
+    )
 
 
+@login_required
+@roles_required('admin', 'contentmaker')
 def edit_text(text_id):
     form = EditForm()
     text = Content.query.filter(Content.id == text_id).first()
@@ -78,6 +84,8 @@ def edit_text(text_id):
                            form_action=url_for('text.process_edit_text', id=text.id))
 
 
+@login_required
+@roles_required('admin', 'contentmaker')
 def process_edit_text():
     text_id = request.args.get('id')
     text = Content.query.filter(Content.id == text_id).first()
@@ -92,6 +100,7 @@ def process_edit_text():
         return redirect(url_for('text.texts_list'))
 
 
+@login_required
 def progress_bar(text_id):
     text = Content.query.filter(Content.id == text_id).first()
     if text is None:
@@ -106,45 +115,3 @@ def progress_bar(text_id):
     progress = amount_text_chunks / amount_audio_chunks * 100
     data = {'progress': progress, 'status': text.status}
     return jsonify(data)
-
-
-def create_srt(text_id):
-    text = Content.query.filter(Content.id == text_id).first()
-    chunks = Chunk.query.filter(Chunk.content_id == text_id).all()
-    split_text = text.text_en.split()
-    word_number_start = 0
-    word_number_end = 0
-    word_time_start = 0
-    word_time_end = 0
-    count = 1
-    subtitles = []
-    for chunk in chunks:
-        word_number_start = word_number_end
-        word_number_end = chunk.word_number + 1
-        word_time_start = word_time_end
-        word_time_end = chunk.word_time
-        split_srt = split_text[word_number_start: word_number_end]
-        join_srt = ' '.join(split_srt)
-        timedelta_start = timedelta(seconds=word_time_start)
-        timedelta_end = timedelta(seconds=word_time_end)
-        subtitle = Subtitle(index=count, start=timedelta_start, end=timedelta_end, content=join_srt)
-        subtitles.append(subtitle)
-        count += 1
-    return jsonify(compose(subtitles))
-
-
-def listen(text_id):
-    # ToDo content not found error
-    text = Content.query.get(text_id)
-    return render_template(
-        'text/listening_page.html',
-        title=text.title_text,
-        content=text
-    )
-
-
-def serve_audio(text_id):
-    text = Content.query.get(text_id)
-    filename = f'{create_name(text.title_text)}.mp3'
-    print(filename)
-    return send_from_directory(Config.UPLOADED_AUDIOS_DEST, filename)
