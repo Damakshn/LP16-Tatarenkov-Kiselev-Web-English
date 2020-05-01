@@ -4,7 +4,7 @@
   <ol>
     {% for text in texts | reverse %}
     <li class="list-text" data-id="{{ text.id }}">
-      {% if text.status != status %}
+      {% if not text.is_ready %}
       <div class="upload-text">
         <a href="{{ url_for('text.edit_text', text_id=text.id) }}"
           >{{ text.title_text }}</a

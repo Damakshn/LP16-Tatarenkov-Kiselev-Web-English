@@ -3,12 +3,12 @@ from flask import Flask
 from flask_login import LoginManager
 from flask_mail import Mail
 from flask_migrate import Migrate
-from flask_sqlalchemy import SQLAlchemy
 from flask_uploads import configure_uploads, UploadSet, AUDIO
+from web_english.db import db
+from web_english import error_handlers
 
 from config import Config
 
-db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
 audios = UploadSet('audios', AUDIO)
@@ -31,6 +31,7 @@ def create_app(config):
     from web_english.main import bp as main_bp
     from web_english.auth import bp as auth_bp
     from web_english.text import bp as text_bp
+    error_handlers.register(app)
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(text_bp, url_prefix="/text")
