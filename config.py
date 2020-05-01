@@ -13,19 +13,19 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Upload Audio configuration
-    UPLOADED_AUDIOS_DEST = f'{BASE_DIR}/web_english/text/uploads/audio'
+    UPLOADED_AUDIOS_DEST = f"{BASE_DIR}/web_english/text/uploads/audio"
 
     # Send Email configuration
-    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER')
-    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
-    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
-    MAIL_SERVER = 'smtp.yandex.ru'
+    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER")
+    MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
+    MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
+    MAIL_SERVER = "smtp.yandex.ru"
     MAIL_PORT = 465
     MAIL_USE_SSL = True
 
     # Celery configuration
-    CELERY_BROKER_URL = 'redis://localhost:6379/0'
-    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+    CELERY_BROKER_URL = "redis://localhost:6379/0"
+    CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
 
     # Yandex SpeechKit configuration
     FOLDER_ID = os.environ.get("FOLDER_ID_YANDEX")
@@ -34,6 +34,8 @@ class Config:
     # 3000 - это интервал в 3 секунды распознования текста. К этому числу мы будем
     # привязывать слова в оригинальном тексте.
     INTERVAL = 3 * 1000
+
+    JSON_AS_ASCII = False
 
 
 class DevConfig(Config):
